@@ -496,8 +496,8 @@ a.link-btn:hover { gap: 6px; }
 .topbar .sp { margin-left: auto; display: flex; gap: 12px; align-items: center; }
 .avatar-a { width: 36px; height: 36px; border-radius: 50%; background: var(--indigo); color: #fff; display: grid; place-items: center; }
 @keyframes pageFadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 .page-enter {
   animation: pageFadeIn .22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -603,10 +603,10 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
 .rep { display: flex; gap: 8px; align-items: flex-start; padding: 12px; background: var(--bg); border: 1px solid var(--line); border-radius: var(--r); margin-bottom: 8px; }
 .rep .rc { flex: 1; display: grid; gap: 8px; min-width: 0; }
 .private-box { padding: 20px; background: var(--indigo-50); border: 1px solid var(--indigo-100); border-radius: var(--r-md); }
-.stickybar { position: fixed; left: var(--sb-w); right: 0; bottom: 0; z-index: 50; display: flex; align-items: center; gap: 12px; padding: 12px 32px; background: rgba(255, 255, 255, .95); backdrop-filter: blur(8px); border-top: 1px solid var(--line); box-shadow: 0 -4px 12px rgba(15, 23, 42, .05); }
+.stickybar { position: static; display: flex; align-items: center; gap: 12px; padding: 16px 20px; margin-top: 24px; background: #fff; border: 1px solid var(--line); border-radius: var(--r-md); box-shadow: var(--sh-1); }
 .stickybar .st-l { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
 .stickybar .st-l i { width: 8px; height: 8px; border-radius: 50%; background: var(--faint); }
-.stickybar .st-l.dirty { color: var(--warn-t); } .stickybar .st-l.dirty i { background: var(--warn); }
+.stickybar .st-l.dirty { color: var(--warn-t); font-weight: 500; } .stickybar .st-l.dirty i { background: var(--warn); }
 .stickybar .sp { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
 .mod-card { padding: 24px; border-left: 4px solid var(--warn); margin-bottom: 16px; }
 .mod-card.done { border-left-color: var(--ok); }
@@ -642,7 +642,7 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
   .adm { grid-template-columns: 1fr; }
   .sb { position: fixed; inset: 0 auto 0 0; width: 280px; transform: translateX(-100%); transition: transform .2s; }
   .adm.open .sb { transform: none; box-shadow: var(--sh-3); }
-  .stickybar { left: 0; padding: 12px 16px; }
+  .stickybar { padding: 14px 16px; margin-top: 16px; }
   .adm-in { padding: 20px 16px; }
   .topbar { padding: 0 16px; }
   .tools-btn { display: inline-flex; }
