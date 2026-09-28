@@ -75,7 +75,6 @@ function saringApps() {
 function kartuApp(a) {
   const tersedia = a.status === 'Tersedia';
   const diskon = a.harga_coret && a.harga_coret > a.harga ? Math.round((1 - a.harga / a.harga_coret) * 100) : 0;
-  const tech = (a.teknologi || []).slice(0, 3);
   return `<article class="card pcard hoverable">
     <a class="pv-wrap" href="#/aplikasi/${esc(a.id)}" aria-label="Lihat ${esc(a.nama)}">
       ${diskon ? `<span class="badge-discount">HEMAT ${diskon}%</span>` : ''}
@@ -85,13 +84,12 @@ function kartuApp(a) {
       <div class="cat-row"><span class="cat">${esc(a.kategori)}</span>${diskon ? `<span class="pill-hemat">Hemat ${rupiah(a.harga_coret - a.harga)}</span>` : ''}</div>
       <h3>${esc(a.nama)}</h3>
       <p class="desc">${esc(a.deskripsi_singkat)}</p>
-      ${tech.length ? `<div class="pcard-tech">${tech.map((t) => `<span class="tag-sm">${esc(t)}</span>`).join('')}</div>` : ''}
       <div class="pcard-price-row">
         <div class="price">${rupiah(a.harga)}</div>
         ${a.harga_coret ? `<s class="price-strikethrough">${rupiah(a.harga_coret)}</s>` : ''}
       </div>
       <div class="foot">
-        <div class="foot-info">${pilihanPill(a.status)}<span class="lbl-mono">${esc(a.id)}</span></div>
+        <div class="foot-info">${pilihanPill(a.status)}</div>
         <a class="btn ${tersedia ? 'btn-primary' : 'btn-secondary'} btn-sm" href="#/aplikasi/${esc(a.id)}">${tersedia ? 'Lihat Detail' : 'Pratinjau'}</a>
       </div>
     </div></article>`;
@@ -119,8 +117,31 @@ function gambarKatalog() {
     <div class="pg"><button data-hal="${hal - 1}" ${hal <= 1 ? 'disabled' : ''} aria-label="Sebelumnya">${icon('chevron-left')}</button>${nomor}<button data-hal="${hal + 1}" ${hal >= halTotal ? 'disabled' : ''} aria-label="Berikutnya">${icon('chevron-right')}</button></div>` : '';
   $$('.seg button').forEach((b) => b.classList.toggle('on', b.dataset.v === FK.tampil));
 }
+function sorotJudulHero(teks) {
+  if (!teks) return '';
+  const frasa = 'Aplikasi Web Siap Pakai';
+  const idx = teks.toLowerCase().indexOf(frasa.toLowerCase());
+  if (idx >= 0) {
+    const sebelum = teks.slice(0, idx);
+    const sasaran = teks.slice(idx, idx + frasa.length);
+    const sesudah = teks.slice(idx + frasa.length);
+    return `${esc(sebelum)}<span class="hero-highlight">${esc(sasaran)}</span>${esc(sesudah)}`;
+  }
+  const frasa2 = 'Aplikasi Web';
+  const idx2 = teks.toLowerCase().indexOf(frasa2.toLowerCase());
+  if (idx2 >= 0) {
+    const sebelum = teks.slice(0, idx2);
+    const sasaran = teks.slice(idx2, idx2 + frasa2.length);
+    const sesudah = teks.slice(idx2 + frasa2.length);
+    return `${esc(sebelum)}<span class="hero-highlight">${esc(sasaran)}</span>${esc(sesudah)}`;
+  }
+  return `<span class="hero-highlight">${esc(teks)}</span>`;
+}
 function pgKatalog(c) {
-  const lencana = set('hero_lencana', 'Koleksi Source Code & Web App Siap Pakai');
+  let lencana = set('hero_lencana', '');
+  if (/katalog\s*resmi/i.test(lencana)) {
+    lencana = '';
+  }
   const judul = set('hero_judul', APP_CONFIG.NAMA_DEFAULT);
   const subjudul = set('hero_subjudul', set('tagline', 'Solusi aplikasi web modern, source code penuh, lisensi selamanya, tanpa biaya langganan bulanan.'));
   const t2 = set('hero_trust_2', 'Full Source Code & Database');
@@ -129,7 +150,7 @@ function pgKatalog(c) {
   c.el.innerHTML = `
     <section class="hero"><div class="container">
       ${lencana ? `<div class="eyebrow-pill"><i></i><span>${esc(lencana)}</span></div>` : ''}
-      <h1 class="h-xl">${esc(judul)}</h1>
+      <h1 class="h-xl">${sorotJudulHero(judul)}</h1>
       ${subjudul ? `<p class="sub">${esc(subjudul)}</p>` : ''}
       <div class="trust">
         <span>${icon('shield-check')} Transfer Bank Diverifikasi Admin</span>
