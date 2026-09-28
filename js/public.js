@@ -234,6 +234,28 @@ async function pgDetail(c) {
   const tombolPesan = tersedia
     ? `<a class="btn btn-primary btn-lg btn-block" href="#/pesan/${esc(d.id)}">${icon('cart')} Pesan Sekarang (Tanpa Akun)</a>`
     : `<button class="btn btn-secondary btn-lg btn-block" disabled>Segera Hadir</button>`;
+  const testiList = Array.isArray(d.testimoni) ? d.testimoni : [];
+  const ratingJml = testiList.length;
+  const ratingRata = ratingJml
+    ? (testiList.reduce((acc, t) => acc + (Number(t.rating) || 5), 0) / ratingJml)
+    : (typeof d.rating === 'number' ? d.rating : (Number(d.rating) || 0));
+  const rating = { jumlah: ratingJml, rata: ratingRata };
+
+  const teknoList = Array.isArray(d.teknologi)
+    ? d.teknologi
+    : (typeof d.teknologi === 'string'
+      ? d.teknologi.split(',').map((s) => s.trim()).filter(Boolean)
+      : []);
+
+  const fiturList = Array.isArray(d.fitur) ? d.fitur : [];
+  const langkahList = Array.isArray(d.langkah) ? d.langkah : [];
+
+  const syaratList = Array.isArray(d.persyaratan)
+    ? d.persyaratan
+    : (typeof d.persyaratan === 'string'
+      ? d.persyaratan.split('\n').map((s) => s.trim()).filter(Boolean)
+      : []);
+
   c.el.innerHTML = `<div class="container">
     <nav class="crumb" aria-label="Breadcrumb"><a href="#/">${icon('arrow-left')} Katalog</a><span>/</span><b>${esc(d.nama)}</b></nav>
     <div class="det">
@@ -247,7 +269,7 @@ async function pgDetail(c) {
         <h1 class="h-lg" style="margin-bottom:8px">${esc(d.nama)}</h1>
         <p class="muted" style="margin-bottom:16px">${esc(d.deskripsi_singkat)}</p>
         <div class="meta3"><div><div class="k">Versi</div><div class="v mono">v${esc(d.versi || '-')}</div></div><div><div class="k">Rilis</div><div class="v">${esc(bulanTahun(d.tanggal_rilis))}</div></div><div><div class="k">Lisensi</div><div class="v">${esc(d.lisensi || '-')}</div></div></div>
-        ${d.teknologi.length ? `<div style="margin:16px 0 0"><div class="lbl-mono" style="margin-bottom:8px">Teknologi</div><div style="display:flex;flex-wrap:wrap;gap:6px">${d.teknologi.map((t) => `<span class="tag">${esc(t)}</span>`).join('')}</div></div>` : ''}
+        ${teknoList.length ? `<div style="margin:16px 0 0"><div class="lbl-mono" style="margin-bottom:8px">Teknologi</div><div style="display:flex;flex-wrap:wrap;gap:6px">${teknoList.map((t) => `<span class="tag">${esc(t)}</span>`).join('')}</div></div>` : ''}
         <div style="margin:20px 0 4px"><span class="price" style="font-size:36px;line-height:40px;letter-spacing:-.025em">${rupiah(d.harga)}</span> ${d.harga_coret ? `<s class="muted mono" style="font-size:13px;margin-left:6px">${rupiah(d.harga_coret)}</s>` : ''}</div>
         <div class="hint" style="margin-bottom:16px">sekali bayar • lisensi selamanya</div>
         ${tombolPesan}
@@ -260,18 +282,18 @@ async function pgDetail(c) {
     <div class="det-body">
       <div>
         ${d.deskripsi_lengkap ? `<section style="margin-bottom:40px"><div class="eyebrow">Tentang Aplikasi</div><h2 class="h-lg" style="margin:4px 0 16px">Deskripsi Lengkap</h2><div class="prose">${md(d.deskripsi_lengkap)}</div></section>` : ''}
-        ${d.fitur.length ? `<section style="margin-bottom:40px"><div class="eyebrow">Spesifikasi Fungsional</div><h2 class="h-lg" style="margin:4px 0 16px">Fitur Utama &amp; Keunggulan</h2>
-          <div class="row c2">${d.fitur.map((f, i) => `<div class="feat"><div class="fic">${icon(IKON_FITUR[i % IKON_FITUR.length])}</div><h4>${esc(f.judul)}</h4><p class="muted t-sm">${esc(f.deskripsi)}</p></div>`).join('')}</div></section>` : ''}
-        ${(d.video_instalasi || d.langkah.length) ? `<section><div class="eyebrow">Self-Deployment Guide</div><h2 class="h-lg" style="margin:4px 0 8px">Panduan &amp; Tutorial Instalasi</h2><p class="muted" style="margin-bottom:16px">Langkah praktis menautkan aplikasi ke akun Anda.</p>
+        ${fiturList.length ? `<section style="margin-bottom:40px"><div class="eyebrow">Spesifikasi Fungsional</div><h2 class="h-lg" style="margin:4px 0 16px">Fitur Utama &amp; Keunggulan</h2>
+          <div class="row c2">${fiturList.map((f, i) => `<div class="feat"><div class="fic">${icon(IKON_FITUR[i % IKON_FITUR.length])}</div><h4>${esc(f.judul)}</h4><p class="muted t-sm">${esc(f.deskripsi)}</p></div>`).join('')}</div></section>` : ''}
+        ${(d.video_instalasi || langkahList.length) ? `<section><div class="eyebrow">Self-Deployment Guide</div><h2 class="h-lg" style="margin:4px 0 8px">Panduan &amp; Tutorial Instalasi</h2><p class="muted" style="margin-bottom:16px">Langkah praktis menautkan aplikasi ke akun Anda.</p>
           ${d.video_instalasi ? kartuVideo(d.video_instalasi, 'Panduan Lengkap Setup dari Nol') : ''}
-          ${d.langkah.length ? `<div class="steps">${d.langkah.map((l, i) => `<div class="step"><span class="no">${String(i + 1).padStart(2, '0')}</span><div><b>${esc(l.judul)}</b><p class="muted t-sm" style="margin-top:2px">${esc(l.deskripsi)}</p></div>${l.durasi ? `<span class="tm">${esc(l.durasi)}</span>` : ''}</div>`).join('')}</div>` : ''}</section>` : ''}
+          ${langkahList.length ? `<div class="steps">${langkahList.map((l, i) => `<div class="step"><span class="no">${String(i + 1).padStart(2, '0')}</span><div><b>${esc(l.judul)}</b><p class="muted t-sm" style="margin-top:2px">${esc(l.deskripsi)}</p></div>${l.durasi ? `<span class="tm">${esc(l.durasi)}</span>` : ''}</div>`).join('')}</div>` : ''}</section>` : ''}
       </div>
       <aside style="display:flex;flex-direction:column;gap:16px">
         <div class="card card-p"><div class="eyebrow" style="margin-bottom:8px">Ulasan Terverifikasi</div>
           ${rating.jumlah ? `<div class="rating-big"><b>${rating.rata.toFixed(1)}</b>${bintang(rating.rata, 18)}</div><p class="muted t-sm" style="margin-top:4px">Berdasarkan ${rating.jumlah} ulasan pembeli terverifikasi</p>` : `<p class="muted">Belum ada testimoni untuk aplikasi ini.</p>`}
-          ${(d.testimoni || []).map((t) => `<div class="rev"><div class="who"><span class="avatar">${t.foto ? `<img alt="" loading="lazy" src="${esc(driveThumb(t.foto, 96))}" onerror="this.remove()">` : esc(inisial(t.nama))}</span><div style="flex:1;min-width:0"><b class="t-sm">${esc(t.nama)}</b>${t.peran ? `<div class="hint">${esc(t.peran)}</div>` : ''}</div><span class="pill pill-ok nodot" style="height:20px;font-size:10px">${icon('check')} Terverifikasi</span></div>${bintang(t.rating, 13)}<p class="t-sm" style="color:var(--text-2)">“${esc(t.isi)}”</p></div>`).join('')}
+          ${testiList.map((t) => `<div class="rev"><div class="who"><span class="avatar">${t.foto ? `<img alt="" loading="lazy" src="${esc(driveThumb(t.foto, 96))}" onerror="this.remove()">` : esc(inisial(t.nama))}</span><div style="flex:1;min-width:0"><b class="t-sm">${esc(t.nama)}</b>${t.peran ? `<div class="hint">${esc(t.peran)}</div>` : ''}</div><span class="pill pill-ok nodot" style="height:20px;font-size:10px">${icon('check')} Terverifikasi</span></div>${bintang(t.rating, 13)}<p class="t-sm" style="color:var(--text-2)">“${esc(t.isi)}”</p></div>`).join('')}
         </div>
-        ${d.persyaratan.length ? `<div class="card card-p"><div class="sec-title">${icon('sliders')} Persyaratan Sistem</div><ul class="checklist">${d.persyaratan.map((p) => `<li>${icon('check-circle')}<span>${esc(p)}</span></li>`).join('')}</ul></div>` : ''}
+        ${syaratList.length ? `<div class="card card-p"><div class="sec-title">${icon('sliders')} Persyaratan Sistem</div><ul class="checklist">${syaratList.map((p) => `<li>${icon('check-circle')}<span>${esc(p)}</span></li>`).join('')}</ul></div>` : ''}
       </aside>
     </div></div>
     <div class="buy-bar"><div><div class="price">${rupiah(d.harga)}</div><div class="hint">sekali bayar</div></div>${tersedia ? `<a class="btn btn-primary" href="#/pesan/${esc(d.id)}">Pesan Sekarang</a>` : '<button class="btn btn-secondary" disabled>Segera Hadir</button>'}</div>`;
