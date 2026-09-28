@@ -202,6 +202,23 @@ function konfirmasi(judul, isi, opsi) {
   opsi = opsi || {};
   return modal('<h3>' + esc(judul) + '</h3><p class="muted">' + isi + '</p><div class="act"><button class="btn btn-secondary" data-m="no">' + esc(opsi.batal || 'Batal') + '</button><button class="btn ' + (opsi.bahaya ? 'btn-danger' : 'btn-primary') + '" data-m="ok">' + esc(opsi.ok || 'Ya, lanjutkan') + '</button></div>');
 }
+function bukaLightbox(url, judul) {
+  if (!url) return;
+  const bd = document.createElement('div');
+  bd.className = 'lightbox-bd';
+  bd.innerHTML = `<div class="lightbox-box">
+    <button class="lightbox-close" type="button" aria-label="Tutup">${icon('x')}</button>
+    <img class="lightbox-img" src="${esc(url)}" alt="${esc(judul || 'Tangkapan Layar')}">
+    ${judul ? `<div class="lightbox-cap">${icon('image')} ${esc(judul)}</div>` : ''}
+  </div>`;
+  const tutup = () => { bd.remove(); document.removeEventListener('keydown', esc_); };
+  const esc_ = (e) => { if (e.key === 'Escape') tutup(); };
+  document.addEventListener('keydown', esc_);
+  bd.addEventListener('click', (e) => {
+    if (e.target === bd || e.target.closest('.lightbox-close')) tutup();
+  });
+  document.body.appendChild(bd);
+}
 async function salin(teks, pesan) {
   try { await navigator.clipboard.writeText(teks); }
   catch (e) { const t = document.createElement('textarea'); t.value = teks; document.body.appendChild(t); t.select(); try { document.execCommand('copy'); } catch (x) { /* abaikan */ } t.remove(); }

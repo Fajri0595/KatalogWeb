@@ -74,12 +74,22 @@ function saringApps() {
 }
 function kartuApp(a) {
   const tersedia = a.status === 'Tersedia';
+  const diskon = a.harga_coret && a.harga_coret > a.harga ? Math.round((1 - a.harga / a.harga_coret) * 100) : 0;
+  const tech = (a.teknologi || []).slice(0, 3);
   return `<article class="card pcard hoverable">
-    <a class="pv-wrap" href="#/aplikasi/${esc(a.id)}" aria-label="Lihat ${esc(a.nama)}">${pratinjau(a)}</a>
+    <a class="pv-wrap" href="#/aplikasi/${esc(a.id)}" aria-label="Lihat ${esc(a.nama)}">
+      ${diskon ? `<span class="badge-discount">HEMAT ${diskon}%</span>` : ''}
+      ${pratinjau(a)}
+    </a>
     <div class="body">
+      <div class="cat-row"><span class="cat">${esc(a.kategori)}</span>${diskon ? `<span class="pill-hemat">Hemat ${rupiah(a.harga_coret - a.harga)}</span>` : ''}</div>
       <h3>${esc(a.nama)}</h3>
       <p class="desc">${esc(a.deskripsi_singkat)}</p>
-      <div class="price">${rupiah(a.harga)}</div>
+      ${tech.length ? `<div class="pcard-tech">${tech.map((t) => `<span class="tag-sm">${esc(t)}</span>`).join('')}</div>` : ''}
+      <div class="pcard-price-row">
+        <div class="price">${rupiah(a.harga)}</div>
+        ${a.harga_coret ? `<s class="price-strikethrough">${rupiah(a.harga_coret)}</s>` : ''}
+      </div>
       <div class="foot">
         <div class="foot-info">${pilihanPill(a.status)}<span class="lbl-mono">${esc(a.id)}</span></div>
         <a class="btn ${tersedia ? 'btn-primary' : 'btn-secondary'} btn-sm" href="#/aplikasi/${esc(a.id)}">${tersedia ? 'Lihat Detail' : 'Pratinjau'}</a>
@@ -110,9 +120,22 @@ function gambarKatalog() {
   $$('.seg button').forEach((b) => b.classList.toggle('on', b.dataset.v === FK.tampil));
 }
 function pgKatalog(c) {
+  const lencana = set('hero_lencana', 'Koleksi Source Code & Web App Siap Pakai');
+  const judul = set('hero_judul', APP_CONFIG.NAMA_DEFAULT);
+  const subjudul = set('hero_subjudul', set('tagline', 'Solusi aplikasi web modern, source code penuh, lisensi selamanya, tanpa biaya langganan bulanan.'));
+  const t2 = set('hero_trust_2', 'Full Source Code & Database');
+  const t3 = set('hero_trust_3', 'Video Tutorial & Panduan Setup');
+
   c.el.innerHTML = `
     <section class="hero"><div class="container">
-      <h1 class="h-xl">${esc(set('hero_judul'))}</h1>
+      ${lencana ? `<div class="eyebrow-pill"><i></i><span>${esc(lencana)}</span></div>` : ''}
+      <h1 class="h-xl">${esc(judul)}</h1>
+      ${subjudul ? `<p class="sub">${esc(subjudul)}</p>` : ''}
+      <div class="trust">
+        <span>${icon('shield-check')} Transfer Bank Diverifikasi Admin</span>
+        ${t2 ? `<span>${icon('check-circle')} ${esc(t2)}</span>` : ''}
+        ${t3 ? `<span>${icon('zap')} ${esc(t3)}</span>` : ''}
+      </div>
     </div></section>
     <div class="container">
       <div class="filterbar"><div id="chips" class="chips-wrap"></div>
@@ -179,7 +202,7 @@ async function pgDetail(c) {
     <nav class="crumb" aria-label="Breadcrumb"><a href="#/">${icon('arrow-left')} Katalog</a><span>/</span><b>${esc(d.nama)}</b></nav>
     <div class="det">
       <div>
-        <div id="main-pv">${pratinjau(d, { besar: true, thumb: tiles[0] ? tiles[0].id : '', alamat: alamat || undefined, lebar: 1100 })}</div>
+        <div id="main-pv" style="position:relative;cursor:zoom-in" title="Klik untuk melihat tangkapan layar layar penuh">${pratinjau(d, { besar: true, thumb: tiles[0] ? tiles[0].id : '', alamat: alamat || undefined, lebar: 1100 })}</div>
         ${tiles.length > 1 ? `<div class="gal-tabs">${tiles.map((t, i) => `<button class="${i === 0 ? 'on' : ''}" data-tile="${i}"><img loading="lazy" alt="" src="${esc(driveThumb(t.id, 240))}">${esc(t.label)}</button>`).join('')}</div>` : ''}
         ${d.video_penggunaan ? `<div style="margin-top:16px"><div class="sec-title" style="margin-bottom:12px">${icon('video')} Video Cara Pakai</div>${kartuVideo(d.video_penggunaan, 'Video Cara Pakai (Demo Singkat)')}</div>` : ''}
       </div>
@@ -216,10 +239,16 @@ async function pgDetail(c) {
     </div></div>
     <div class="buy-bar"><div><div class="price">${rupiah(d.harga)}</div><div class="hint">sekali bayar</div></div>${tersedia ? `<a class="btn btn-primary" href="#/pesan/${esc(d.id)}">Pesan Sekarang</a>` : '<button class="btn btn-secondary" disabled>Segera Hadir</button>'}</div>`;
   bindVideo(c.el);
+  let aktifTile = 0;
   on(c.el, 'click', '[data-tile]', (e, t) => {
-    const it = tiles[+t.dataset.tile];
+    aktifTile = +t.dataset.tile;
+    const it = tiles[aktifTile];
     $$('.gal-tabs button', c.el).forEach((b) => b.classList.toggle('on', b === t));
     $('#main-pv').innerHTML = pratinjau(d, { besar: true, thumb: it.id, alamat: alamat || undefined, lebar: 1100 });
+  });
+  on(c.el, 'click', '#main-pv', () => {
+    const it = tiles[aktifTile] || tiles[0];
+    if (it && it.id) bukaLightbox(driveThumb(it.id, 1600), d.nama + (it.label ? ' — ' + it.label : ''));
   });
   if (!ss('kaw_tv_' + id)) { ss('kaw_tv_' + id, 1); API.post('trackView', { id }).catch(() => {}); }
 }
@@ -247,8 +276,26 @@ function pgPesan(c) {
         </section>
         <section class="card card-p">
           <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px"><div class="sec-title"><span class="dot"></span>Informasi Rekening Tujuan Transfer</div><span class="pill pill-indigo nodot">Manual Transfer ${esc(set('sla_verifikasi', '1×24 jam'))}</span></div>
-          <div class="bank"><div style="display:flex;gap:14px;align-items:center"><div class="logo-b">${esc(bankNm.replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase() || 'BANK')}</div><div><div class="lbl-mono">Bank Tujuan</div><div class="h-sm">${esc(bankNm)}</div><div class="muted t-sm">a/n <b style="color:var(--ink)">${esc(set('bank_atas_nama'))}</b>${set('bank_cabang') ? ' · ' + esc(set('bank_cabang')) : ''}</div></div></div>
-            <div style="text-align:right"><div class="lbl-mono">Nomor Rekening</div><div style="display:flex;align-items:center;gap:8px;justify-content:flex-end"><span class="acc-no">${esc(bankNo)}</span><button class="btn btn-secondary btn-sm" type="button" id="salin-rek">${icon('copy')} Salin</button></div></div></div>
+          <div class="bank-card-visual">
+            <div class="bank-card-top">
+              <div class="bank-card-chip"></div>
+              <div class="bank-card-bankname">${icon('landmark')} ${esc(bankNm || 'BANK TRANSFER')}</div>
+            </div>
+            <div class="bank-card-number-row">
+              <div>
+                <div class="bank-card-holder-label">Nomor Rekening Tujuan Transfer</div>
+                <div class="bank-card-acc-no">${esc(bankNo)}</div>
+              </div>
+              <button class="btn btn-secondary btn-sm" type="button" id="salin-rek" style="background:#fff;color:var(--ink);font-weight:600">${icon('copy')} Salin No. Rek</button>
+            </div>
+            <div class="bank-card-bottom">
+              <div>
+                <div class="bank-card-holder-label">Atas Nama Pemilik Rekening</div>
+                <div class="bank-card-holder-val">${esc(set('bank_atas_nama'))}${set('bank_cabang') ? ' · ' + esc(set('bank_cabang')) : ''}</div>
+              </div>
+              <span class="pill pill-ok nodot" style="background:rgba(16,185,129,0.2);color:#A7F3D0;border-color:rgba(167,243,208,0.4)">${icon('shield-check')} Terverifikasi</span>
+            </div>
+          </div>
           <div class="nominal"><div><div class="nl">${icon('credit-card')} Nominal tepat yang harus ditransfer</div><div class="muted t-sm" style="margin-top:2px;max-width:420px">${esc(set('catatan_transfer'))}</div></div><div class="amt">${rupiah(a.harga)}</div></div>
         </section>
         <section class="card card-p">
@@ -288,19 +335,83 @@ function pgPesan(c) {
     f[k].addEventListener('input', () => { if (f[k].closest('.field').classList.contains('has-error')) tandai(k, cek[k]()); if (k === 'email') $('#emok').classList.toggle('hide', !cek.email()); stepper(); });
     f[k].addEventListener('blur', () => { if (f[k].value || k !== 'wa') tandai(k, cek[k]()); });
   });
-  $('#salin-rek').addEventListener('click', () => salin(bankNo.replace(/[\s-]/g, ''), 'Nomor rekening disalin'));
+  $('#salin-rek').addEventListener('click', () => {
+    salin(bankNo.replace(/[\s-]/g, ''), 'Nomor rekening disalin ke papan klip');
+    const btn = $('#salin-rek');
+    if (btn) {
+      const orig = btn.innerHTML;
+      btn.innerHTML = icon('check') + ' Tersalin!';
+      btn.style.background = '#ECFDF5';
+      btn.style.color = '#047857';
+      setTimeout(() => {
+        btn.innerHTML = orig;
+        btn.style.background = '#fff';
+        btn.style.color = 'var(--ink)';
+      }, 2000);
+    }
+  });
   const buktiErr = (m) => { const e = $('#bukti-err'); e.querySelector('span').textContent = m || ''; e.style.display = m ? 'flex' : 'none'; };
   buktiErr('');
   async function pilihBerkas(file) {
     buktiErr('');
     try {
-      $('#bukti-st').textContent = 'Memproses...';
+      $('#bukti-st').textContent = 'Memproses berkas...';
       st.bukti = await siapkanBukti(file);
-    } catch (e) { st.bukti = null; $('#berkas-info').innerHTML = ''; $('#bukti-st').textContent = 'Belum ada berkas'; buktiErr(e.message); stepper(); return; }
+    } catch (e) {
+      st.bukti = null;
+      $('#berkas-info').innerHTML = '';
+      $('#dz').classList.remove('hide');
+      $('#bukti-st').textContent = 'Belum ada berkas';
+      buktiErr(e.message);
+      stepper();
+      return;
+    }
     const b = st.bukti;
     $('#bukti-st').innerHTML = '<span style="color:var(--ok-t)">' + icon('check-circle') + ' 1 berkas siap</span>';
-    $('#berkas-info').innerHTML = `<div class="filerow"><div class="fi">${b.pdf ? icon('file-text') : `<img alt="" src="${b.dataUrl}">`}</div><div style="min-width:0;flex:1"><div class="fn">${esc(b.nama)}</div><div class="fm">${ukuranBerkas(b.ukuran)} • ${icon('check-circle')} Siap dikirim</div></div><button class="btn btn-ghost btn-sm" type="button" id="hapus-b">${icon('trash')} Hapus / Ganti</button></div><div class="progress"><i style="width:100%"></i></div>`;
-    $('#hapus-b').addEventListener('click', () => { st.bukti = null; $('#berkas-info').innerHTML = ''; $('#bukti-st').textContent = 'Belum ada berkas'; stepper(); });
+    $('#dz').classList.add('hide');
+    $('#berkas-info').innerHTML = `
+      <div class="receipt-preview-card">
+        <div class="receipt-preview-media">
+          <span class="receipt-preview-badge">${b.pdf ? 'DOKUMEN PDF' : 'STRUK BUKTI TRANSFER'}</span>
+          ${b.pdf ? `
+            <div class="receipt-preview-pdf">
+              <div class="pdf-ic">${icon('file-text')}</div>
+              <div style="font-weight:600;font-size:15px">${esc(b.nama)}</div>
+              <div class="muted mono" style="font-size:12px">${ukuranBerkas(b.ukuran)}</div>
+            </div>
+          ` : `
+            <img id="prv-img" src="${b.dataUrl}" alt="Bukti Transfer" title="Klik untuk memperbesar layar penuh">
+          `}
+        </div>
+        <div class="receipt-preview-foot">
+          <div class="receipt-preview-info">
+            <b class="t-sm" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(b.nama)}</b>
+            <span class="muted t-sm mono">${ukuranBerkas(b.ukuran)} • ${icon('check-circle')} Siap Dikirim</span>
+          </div>
+          <div class="receipt-preview-actions">
+            ${!b.pdf ? `<button class="btn btn-secondary btn-sm" type="button" id="zoom-b">${icon('maximize')} Perbesar</button>` : ''}
+            <button class="btn btn-danger-o btn-sm" type="button" id="hapus-b">${icon('trash')} Ganti Berkas</button>
+          </div>
+        </div>
+      </div>
+      <div class="progress"><i style="width:100%"></i></div>
+    `;
+
+    if (!b.pdf) {
+      const zoomImg = () => bukaLightbox(b.dataUrl, 'Pratinjau Bukti Transfer: ' + b.nama);
+      const prvEl = $('#prv-img');
+      const zBtn = $('#zoom-b');
+      if (prvEl) prvEl.addEventListener('click', zoomImg);
+      if (zBtn) zBtn.addEventListener('click', zoomImg);
+    }
+
+    $('#hapus-b').addEventListener('click', () => {
+      st.bukti = null;
+      $('#berkas-info').innerHTML = '';
+      $('#dz').classList.remove('hide');
+      $('#bukti-st').textContent = 'Belum ada berkas';
+      stepper();
+    });
     stepper();
   }
   bindDropzone($('#dz'), $('#berkas'), pilihBerkas);
