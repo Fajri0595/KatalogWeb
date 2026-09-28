@@ -276,6 +276,7 @@ async function admPengaturan(c) {
   if (c.batal()) return;
   Adm.setting = d;
   const V = Object.assign({}, d.nilai);
+  if (!V.whatsapp) V.whatsapp = (window.APP_CONFIG && APP_CONFIG.WHATSAPP_DEFAULT) || '085655860383';
   let faq = await ambil('adminGetFaq');
   if (c.batal()) return;
   let kotor = false;
@@ -440,7 +441,7 @@ async function admPengaturan(c) {
   }
 
   function panelKontak() {
-    return `<div class="card card-p"><div class="row c2">${inp('email_admin', 'Email Kontak Publik &amp; Notifikasi')}${inp('whatsapp', 'Nomor WhatsApp', { ph: '+62 812-3456-7890' })}</div>
+    return `<div class="card card-p"><div class="row c2">${inp('email_admin', 'Email Kontak Publik &amp; Notifikasi')}${inp('whatsapp', 'Nomor WhatsApp', { ph: '085655860383' })}</div>
       <div class="row c2">${inp('jam_layanan', 'Jam Layanan')}${inp('kota', 'Kota')}</div>${inp('url_situs', 'Alamat Situs GitHub Pages', { mono: true, maks: 300, ph: 'https://username.github.io/katalog-aplikasi-web/' })}
       <div class="note-i">${icon('info')}<div>Alamat situs dipakai untuk menyusun tautan "Cek Status Pesanan" pada email otomatis. Isi persis sesuai URL GitHub Pages Anda, diakhiri tanda "/".</div></div></div>`;
   }

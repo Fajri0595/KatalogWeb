@@ -2,7 +2,7 @@
    public.js — semua halaman untuk pengunjung/pembeli
    ============================================================ */
 const S = { pengaturan: {}, apps: [], detail: {}, faq: null, siap: false };
-const set = (k, cad) => (S.pengaturan && S.pengaturan[k] ? S.pengaturan[k] : cad || '');
+const set = (k, cad) => (S.pengaturan && S.pengaturan[k] ? S.pengaturan[k] : (cad !== undefined ? cad : (k === 'whatsapp' ? ((window.APP_CONFIG && APP_CONFIG.WHATSAPP_DEFAULT) || '085655860383') : '')));
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 function ss(k, v) { try { if (v === undefined) return JSON.parse(sessionStorage.getItem(k) || 'null'); if (v === null) sessionStorage.removeItem(k); else sessionStorage.setItem(k, JSON.stringify(v)); } catch (e) { return null; } }
