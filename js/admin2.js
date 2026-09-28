@@ -8,8 +8,8 @@
 const AdmA = { q: '', kat: 'Semua', status: 'Semua', hal: 1 };
 async function admAplikasi(c) {
   const el = c.el;
-  el.innerHTML = skelAdmin(3);
-  const apps = await muatAplikasi(true);
+  if (!Adm.apps) el.innerHTML = skelAdmin(3);
+  const apps = await muatAplikasi(false);
   if (c.batal()) return;
   const kats = ['Semua'].concat(Array.from(new Set(apps.map((a) => a.kategori))));
   el.innerHTML = `<div class="page-h"><div><div class="eyebrow">Manajemen Produk</div><h1 class="h-lg" style="margin-top:4px">Daftar &amp; Kelola Aplikasi Web</h1><p>Atur etalase aplikasi, visibilitas status penjualan, pembaruan versi, dan konfigurasi harga produk.</p></div>
@@ -218,8 +218,8 @@ async function admAplikasiForm(c) {
 const AdmT = { tab: 'Menunggu', q: '' };
 async function admTestimoni(c) {
   const el = c.el;
-  el.innerHTML = skelAdmin(3);
-  const tes = await muatTestimoni(true);
+  if (!Adm.tes) el.innerHTML = skelAdmin(3);
+  const tes = await muatTestimoni(false);
   if (c.batal()) return;
   el.innerHTML = `<div class="page-h"><div><div class="eyebrow">Moderasi Ulasan</div><h1 class="h-lg" style="margin-top:4px">Moderasi Testimoni &amp; Ulasan Pembeli</h1><p>Tinjau testimoni dari pembeli terverifikasi sebelum dipublikasikan ke halaman etalase publik.</p></div></div>
     <div class="stats stats-c3" style="grid-template-columns:repeat(3,minmax(0,1fr))">
@@ -271,16 +271,23 @@ const TAB_VAR = ['kode_pesanan', 'nama_pembeli', 'email_pembeli', 'nama_aplikasi
 const AdmP = { tab: 'rekening', tpl: '1' };
 async function admPengaturan(c) {
   const el = c.el;
-  el.innerHTML = skelAdmin(0) + '<div class="card card-p"><div class="skel" style="height:320px"></div></div>';
-  const d = await ambil('adminGetSettings');
+  if (!Adm.setting || !Adm.faq) {
+    el.innerHTML = skelAdmin(0) + '<div class="card card-p"><div class="skel" style="height:320px"></div></div>';
+  }
+  const [d, faqData] = await Promise.all([
+    Adm.setting ? Adm.setting : ambil('adminGetSettings'),
+    Adm.faq ? Adm.faq : ambil('adminGetFaq')
+  ]);
   if (c.batal()) return;
   Adm.setting = d;
+  Adm.faq = faqData;
   const V = Object.assign({}, d.nilai);
   if (!V.whatsapp || /0000-0000|1234567890/i.test(V.whatsapp)) V.whatsapp = (window.APP_CONFIG && APP_CONFIG.WHATSAPP_DEFAULT) || '085655860383';
-  let faq = await ambil('adminGetFaq');
-  if (c.batal()) return;
+  let faq = JSON.parse(JSON.stringify(faqData));
   let kotor = false;
+  let faqKotor = false;
   const tandai = () => { kotor = true; const s = $('#dirty'); if (s) { s.classList.add('dirty'); s.innerHTML = '<i></i> Perubahan belum disimpan'; } };
+  const tandaiFaq = () => { faqKotor = true; tandai(); };
 
   el.innerHTML = `<div class="page-h"><div><div class="eyebrow">Konfigurasi</div><h1 class="h-lg" style="margin-top:4px">Pengaturan Toko &amp; Sistem</h1><p>Atur rekening tujuan transfer, kontak developer, FAQ publik, serta template email otomatis.</p></div></div>
     <div class="row c3" style="margin-bottom:24px">
@@ -481,7 +488,7 @@ async function admPengaturan(c) {
       const addBtn = $('#addkupon');
       if (addBtn) addBtn.addEventListener('click', () => modalKupon());
     }
-    if (AdmP.tab === 'faq') { gambarFaq(); $('#addfaq').addEventListener('click', () => { faq.push({ kategori: 'Umum', pertanyaan: '', jawaban: '' }); gambarFaq(); tandai(); }); }
+    if (AdmP.tab === 'faq') { gambarFaq(); $('#addfaq').addEventListener('click', () => { faq.push({ kategori: 'Umum', pertanyaan: '', jawaban: '' }); gambarFaq(); tandaiFaq(); }); }
     if (AdmP.tab === 'email') ikatEmail();
     if (AdmP.tab === 'integrasi') { const b = $('#ubahsandi'); if (b) b.addEventListener('click', gantiSandiModal); }
   }
@@ -507,7 +514,16 @@ async function admPengaturan(c) {
     try { await ambil('adminChangePassword', { lama: v.l, baru: v.b }); toast('Kata sandi berhasil diubah.', 'ok'); } catch (e) { toast(e.message, 'err'); }
   }
   gambarPanel();
-  on(el, 'click', '[data-ptab]', (e, t) => { AdmP.tab = t.dataset.ptab; gambarPanel(); });
+  on(el, 'click', '[data-ptab]', (e, t) => {
+    AdmP.tab = t.dataset.ptab;
+    gambarPanel();
+    const pnl = $('#panel');
+    if (pnl) {
+      pnl.classList.remove('page-enter');
+      void pnl.offsetWidth;
+      pnl.classList.add('page-enter');
+    }
+  });
   on(el, 'change', '[data-tgl-kupon]', (e, t) => {
     const idx = +t.dataset.tglKupon;
     if (kuponList[idx]) {
@@ -534,19 +550,31 @@ async function admPengaturan(c) {
     gambarKupon();
     toast('Kupon dihapus.', 'ok');
   });
-  on(el, 'input', '[data-faq-k]', (e, t) => { faq[+t.dataset.faqK].kategori = t.value; });
-  on(el, 'input', '[data-faq-q]', (e, t) => { faq[+t.dataset.faqQ].pertanyaan = t.value; });
-  on(el, 'input', '[data-faq-a]', (e, t) => { faq[+t.dataset.faqA].jawaban = t.value; });
-  on(el, 'click', '[data-rmfaq]', (e, t) => { faq.splice(+t.dataset.rmfaq, 1); gambarFaq(); tandai(); });
+  on(el, 'input', '[data-faq-k]', (e, t) => { faq[+t.dataset.faqK].kategori = t.value; tandaiFaq(); });
+  on(el, 'input', '[data-faq-q]', (e, t) => { faq[+t.dataset.faqQ].pertanyaan = t.value; tandaiFaq(); });
+  on(el, 'input', '[data-faq-a]', (e, t) => { faq[+t.dataset.faqA].jawaban = t.value; tandaiFaq(); });
+  on(el, 'click', '[data-rmfaq]', (e, t) => { faq.splice(+t.dataset.rmfaq, 1); gambarFaq(); tandaiFaq(); });
   $('#uji-email').addEventListener('click', async (e) => { const b = e.currentTarget; tombolBusy(b, true, 'Mengirim...'); try { const r = await ambil('adminTestEmail'); toast(r.pesan, 'ok'); } catch (err) { toast(err.message, 'err'); } finally { tombolBusy(b, false); } });
   $('#simpan').addEventListener('click', async () => {
     const btn = $('#simpan'); tombolBusy(btn, true, 'Menyimpan...');
     try {
-      await ambil('adminSaveSettings', { nilai: V });
-      const faqBersih = faq.filter((f) => f.pertanyaan.trim() && f.jawaban.trim());
-      await ambil('adminSaveFaq', { items: faqBersih });
-      toast('Pengaturan berhasil disimpan.', 'ok'); kotor = false; $('#dirty').classList.remove('dirty'); $('#dirty').innerHTML = '<i></i> Tersimpan';
-      bersihkanCachePublik(); S.pengaturan = Object.assign({}, S.pengaturan, V);
+      const tugas = [ambil('adminSaveSettings', { nilai: V })];
+      if (faqKotor) {
+        const faqBersih = faq.filter((f) => f.pertanyaan.trim() && f.jawaban.trim());
+        tugas.push(ambil('adminSaveFaq', { items: faqBersih }));
+      }
+      await Promise.all(tugas);
+      Adm.setting.nilai = Object.assign({}, V);
+      if (faqKotor) {
+        Adm.faq = faq.filter((f) => f.pertanyaan.trim() && f.jawaban.trim());
+        faqKotor = false;
+      }
+      toast('Pengaturan berhasil disimpan.', 'ok');
+      kotor = false;
+      $('#dirty').classList.remove('dirty');
+      $('#dirty').innerHTML = '<i></i> Tersimpan';
+      bersihkanCachePublik();
+      S.pengaturan = Object.assign({}, S.pengaturan, V);
     } catch (e) { toast(e.message, 'err', 6000); } finally { tombolBusy(btn, false); }
   });
 }

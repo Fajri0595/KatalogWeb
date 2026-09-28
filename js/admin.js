@@ -1,7 +1,7 @@
 /* ============================================================
    admin.js — shell admin, login, dashboard, verifikasi pesanan
    ============================================================ */
-const Adm = { orders: null, apps: null, tes: null, setting: null, dash: null, periode: 'bulan_ini', bukti: {}, tab: 'menunggu', q: '', hal: 1, halDash: 1, tabDash: 'semua', qDash: '', sel: '' };
+const Adm = { orders: null, apps: null, tes: null, setting: null, faq: null, dash: null, periode: 'bulan_ini', bukti: {}, tab: 'menunggu', q: '', hal: 1, halDash: 1, tabDash: 'semua', qDash: '', sel: '' };
 
 // ---------- Shell ----------
 const NAV_ADMIN = [
@@ -42,7 +42,7 @@ function perbaruiBadge() {
 }
 async function keluarAdmin() {
   try { await API.admin('adminLogout'); } catch (e) { /* abaikan */ }
-  Sesi.hapus(); Adm.orders = Adm.apps = Adm.tes = Adm.setting = Adm.dash = null;
+  Sesi.hapus(); Adm.orders = Adm.apps = Adm.tes = Adm.setting = Adm.faq = Adm.dash = null;
   toast('Anda telah keluar.', 'info');
   $('#root').dataset.layout = '';
   location.hash = '#/admin';
@@ -132,8 +132,12 @@ function barisPesananRingkas(o) {
 }
 async function admRingkasan(c) {
   const el = c.el;
-  el.innerHTML = skelAdmin(4);
-  const [dash, orders, tes] = await Promise.all([ambil('adminGetDashboard', { periode: Adm.periode }), muatPesanan(true), muatTestimoni(true)]);
+  if (!Adm.dash) el.innerHTML = skelAdmin(4);
+  const [dash, orders, tes] = await Promise.all([
+    Adm.dash ? Adm.dash : ambil('adminGetDashboard', { periode: Adm.periode }),
+    muatPesanan(false),
+    muatTestimoni(false)
+  ]);
   if (c.batal()) return;
   Adm.dash = dash;
   const r = dash.ringkas;
@@ -159,8 +163,25 @@ async function admRingkasan(c) {
         <div class="card card-p" style="flex:1"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h2 class="h-sm">Aplikasi Terlaris</h2><span class="hint">Berdasarkan omzet</span></div>${barTerlaris(dash.terlaris)}</div></div></div>
     <div class="card"><div class="tbl-head"><div><div class="lbl-mono">Log Transaksi</div><h2 class="h-md" style="margin-top:2px">Ringkasan Pesanan Terbaru</h2></div><div style="display:flex;gap:8px"><div class="ig" style="min-width:240px">${icon('search')}<input class="input" id="qd" placeholder="Cari kode atau pembeli..." value="${esc(Adm.qDash)}"></div></div></div>
       <div style="padding:0 20px 16px" id="tabd"></div><div class="tbl-wrap" id="tbld"></div><div class="tbl-foot" id="fotd"></div></div>`;
-  $('#periode').addEventListener('change', (e) => { Adm.periode = e.target.value; jalankan(); });
-  $('#segar').addEventListener('click', () => jalankan());
+  $('#periode').addEventListener('change', (e) => { Adm.periode = e.target.value; Adm.dash = null; jalankan(); });
+  $('#segar').addEventListener('click', async () => {
+    const b = $('#segar');
+    tombolBusy(b, true, 'Memperbarui...');
+    try {
+      const [dash] = await Promise.all([
+        ambil('adminGetDashboard', { periode: Adm.periode }),
+        muatPesanan(true),
+        muatTestimoni(true)
+      ]);
+      Adm.dash = dash;
+      await admRingkasan(c);
+      toast('Data dashboard diperbarui.', 'ok');
+    } catch (e) {
+      toast(e.message, 'err');
+    } finally {
+      tombolBusy(b, false);
+    }
+  });
   $('#csv').addEventListener('click', () => {
     const mulai = new Date(dash.rentang.mulai), akhir = new Date(dash.rentang.akhir);
     const data = orders.filter((o) => { const d = new Date(o.tanggal); return d >= mulai && d < akhir; });
@@ -205,8 +226,8 @@ async function muatBukti(o) {
 }
 async function admPesanan(c) {
   const el = c.el;
-  el.innerHTML = skelAdmin(1);
-  const orders = await muatPesanan(true);
+  if (!Adm.orders) el.innerHTML = skelAdmin(1);
+  const orders = await muatPesanan(false);
   if (c.batal()) return;
   if (c.query.kode) { Adm.sel = c.query.kode; const o = orders.find((x) => x.kode === c.query.kode); if (o) Adm.tab = o.status === 'Menunggu Verifikasi' ? 'menunggu' : o.status === 'Disetujui' ? 'disetujui' : 'ditolak'; }
   if (c.query.tab) Adm.tab = c.query.tab;

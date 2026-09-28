@@ -80,6 +80,12 @@ async function jalankan() {
   if (path === '/admin' || path.indexOf('/admin/') === 0) {
     document.title = 'Admin — ' + (S.pengaturan.nama_toko || APP_CONFIG.NAMA_DEFAULT);
     await pgAdmin({ path, query, batal });
+    const admMain = $('#adm-main');
+    if (admMain) {
+      admMain.classList.remove('page-enter');
+      void admMain.offsetWidth;
+      admMain.classList.add('page-enter');
+    }
     return;
   }
   const hit = cocokRute(path);
@@ -95,7 +101,12 @@ async function jalankan() {
     layoutPublik(hit.r.n);
     document.title = S.pengaturan.nama_toko || APP_CONFIG.NAMA_DEFAULT;
   }
-  try { await hit.r.f({ el, params: hit.params, query, batal }); }
+  try {
+    await hit.r.f({ el, params: hit.params, query, batal });
+    el.classList.remove('page-enter');
+    void el.offsetWidth;
+    el.classList.add('page-enter');
+  }
   catch (e) { console.error(e); if (!batal()) galat(el, e, () => jalankan()); }
 }
 
