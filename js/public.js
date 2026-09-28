@@ -73,19 +73,17 @@ function saringApps() {
     (!q || (a.nama + ' ' + a.deskripsi_singkat + ' ' + a.kategori + ' ' + a.teknologi.join(' ')).toLowerCase().indexOf(q) >= 0)));
 }
 function kartuApp(a) {
-  const tek = a.teknologi.slice(0, 2);
   const tersedia = a.status === 'Tersedia';
   return `<article class="card pcard hoverable">
-    <div class="pv-wrap"><div class="pv-top">${pilihanPill(a.status)}<span class="lbl-mono">ID: ${esc(a.id)}</span></div>
-      ${pratinjau(a)}
-      <div class="pv-tags"><span>${esc(tek[0] || '')}</span><span>${esc(tek[1] || '')}</span></div></div>
+    <a class="pv-wrap" href="#/aplikasi/${esc(a.id)}" aria-label="Lihat ${esc(a.nama)}">${pratinjau(a)}</a>
     <div class="body">
-      <div class="cat">${esc(a.kategori)}</div>
       <h3>${esc(a.nama)}</h3>
       <p class="desc">${esc(a.deskripsi_singkat)}</p>
-      <div class="meta">${icon('code')} Versi ${esc(a.versi || '-')}${a.teknologi.length ? ' • ' + esc(a.teknologi.slice(0, 2).join(' & ')) : ''}</div>
-      <div class="foot"><div><div class="price-l">${tersedia ? 'Harga lisensi' : 'Estimasi lisensi'}</div><div class="price">${rupiah(a.harga)}</div></div>
-        ${tersedia ? `<a class="btn btn-primary btn-sm" href="#/aplikasi/${esc(a.id)}">Lihat Detail ${icon('arrow-right')}</a>` : `<a class="btn btn-secondary btn-sm" href="#/aplikasi/${esc(a.id)}">${icon('eye')} Pratinjau</a>`}</div>
+      <div class="price">${rupiah(a.harga)}</div>
+      <div class="foot">
+        <div class="foot-info">${pilihanPill(a.status)}<span class="lbl-mono">${esc(a.id)}</span></div>
+        <a class="btn ${tersedia ? 'btn-primary' : 'btn-secondary'} btn-sm" href="#/aplikasi/${esc(a.id)}">${tersedia ? 'Lihat Detail' : 'Pratinjau'}</a>
+      </div>
     </div></article>`;
 }
 function gambarKatalog() {
@@ -112,19 +110,16 @@ function gambarKatalog() {
   $$('.seg button').forEach((b) => b.classList.toggle('on', b.dataset.v === FK.tampil));
 }
 function pgKatalog(c) {
-  const rilis = S.apps.filter((a) => a.status === 'Tersedia').length;
   c.el.innerHTML = `
     <section class="hero"><div class="container">
-      <div class="eyebrow-pill"><i></i>${esc(set('hero_lencana'))}</div>
       <h1 class="h-xl">${esc(set('hero_judul'))}</h1>
-      <p class="sub">${esc(set('hero_subjudul'))}</p>
-      <form class="searchbar" id="fcari" role="search"><div class="ig">${icon('search')}<input class="input" id="q" type="search" placeholder="Cari nama aplikasi, fitur, atau teknologi (misal: POS, Kasir, GAS, Vue)..." value="${esc(FK.q)}" aria-label="Cari aplikasi"></div><button class="btn btn-primary" type="submit"><span>Cari</span> ${icon('arrow-right')}</button></form>
-      <div class="trust"><span>${icon('check-circle')} ${rilis} aplikasi rilis</span><span>${icon('check-circle')} ${esc(set('hero_trust_2'))}</span><span>${icon('check-circle')} ${esc(set('hero_trust_3'))}</span></div>
     </div></section>
     <div class="container">
-      <div class="filterbar"><div id="chips" style="display:contents"></div>
-        <div class="sp"><select class="select" id="urut" aria-label="Urutkan">
-          <option value="populer">Urutkan: Terpopuler</option><option value="terbaru">Terbaru</option><option value="termurah">Harga Terendah</option><option value="termahal">Harga Tertinggi</option><option value="nama">Nama A–Z</option></select>
+      <div class="filterbar"><div id="chips" class="chips-wrap"></div>
+        <div class="sp">
+          <form class="searchmini" id="fcari" role="search"><span class="si">${icon('search')}</span><input class="input" id="q" type="search" placeholder="Cari aplikasi..." value="${esc(FK.q)}" aria-label="Cari aplikasi"></form>
+          <select class="select" id="urut" aria-label="Urutkan">
+            <option value="populer">Terpopuler</option><option value="terbaru">Terbaru</option><option value="termurah">Harga Terendah</option><option value="termahal">Harga Tertinggi</option><option value="nama">Nama A–Z</option></select>
           <div class="seg"><button data-v="grid" aria-label="Tampilan kotak">${icon('grid')}</button><button data-v="list" aria-label="Tampilan daftar">${icon('list')}</button></div></div></div>
       <div id="grid" class="grid-cards"></div>
       <div class="pager" id="pager"></div>
