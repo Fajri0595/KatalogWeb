@@ -150,16 +150,10 @@ function gambarKatalog() {
   $$('.seg button').forEach((b) => b.classList.toggle('on', b.dataset.v === FK.tampil));
 }
 function pgKatalog(c) {
-  let lencana = set('hero_lencana', '');
-  if (/katalog\s*resmi/i.test(lencana)) {
-    lencana = '';
-  }
+  const lencana = set('hero_lencana', '');
   const judul = set('hero_judul', APP_CONFIG.NAMA_DEFAULT);
-  const SUBJUDUL_KUSTOM = 'Temukan website siap pakai untuk kebutuhan Anda. Koleksi aplikasi web pilihan yang praktis, modern, dan mudah digunakan. Dapatkan **source code lengkap, tutorial penggunaan, serta dukungan yang jelas**. Pilih website yang sesuai, pesan dengan mudah, dan mulai gunakan untuk kebutuhan bisnis, pendidikan, maupun proyek pribadi.';
-  let subjudul = set('hero_subjudul');
-  if (!subjudul || /^koleksi aplikasi/i.test(subjudul.trim())) {
-    subjudul = SUBJUDUL_KUSTOM;
-  }
+  const subjudul = set('hero_subjudul', '');
+  const t1 = set('hero_trust_1', 'Transfer Bank Diverifikasi Admin');
   const t2 = set('hero_trust_2', 'Full Source Code & Database');
   const t3 = set('hero_trust_3', 'Video Tutorial & Panduan Setup');
 
@@ -169,7 +163,7 @@ function pgKatalog(c) {
       <h1 class="h-xl">${esc(judul)}</h1>
       ${subjudul ? `<p class="sub">${mdInline(subjudul)}</p>` : ''}
       <div class="trust">
-        <span>${icon('shield-check')} Transfer Bank Diverifikasi Admin</span>
+        ${t1 ? `<span>${icon('shield-check')} ${esc(t1)}</span>` : ''}
         ${t2 ? `<span>${icon('check-circle')} ${esc(t2)}</span>` : ''}
         ${t3 ? `<span>${icon('zap')} ${esc(t3)}</span>` : ''}
       </div>
