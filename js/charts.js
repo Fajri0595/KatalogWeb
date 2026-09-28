@@ -135,6 +135,6 @@ function barStatus(st) {
 }
 function barTerlaris(list) {
   if (!list.length) return '<div class="empty" style="padding:24px">Belum ada penjualan pada periode ini.</div>';
-  return '<div class="hbars">' + list.map((a, i) => '<div class="hb"><div class="top"><span>' + (i + 1) + '. ' + esc(a.nama) + '</span><b class="mono" style="font-size:12px">' + rupiah(a.omzet) + '</b></div>' +
+  return '<div class="hbars">' + list.map((a, i) => '<div class="hb"><div class="top"><span title="' + esc(a.nama) + '">' + (i + 1) + '. ' + esc(a.nama) + '</span><b class="mono" style="font-size:12px">' + rupiah(a.omzet) + '</b></div>' +
     '<div class="track"><i style="width:' + Math.max(3, a.pangsa) + '%"></i></div><div class="sub"><span>' + a.pesanan + ' pesanan</span><span>' + a.pangsa + '% pangsa</span></div></div>').join('') + '</div>';
 }

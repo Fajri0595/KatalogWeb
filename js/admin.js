@@ -145,24 +145,81 @@ async function admRingkasan(c) {
   const puncak = dash.deret.reduce((m, d) => (d.pendapatan > (m ? m.pendapatan : 0) ? d : m), null);
   const st = dash.status; const totalPes = st.Disetujui + st['Menunggu Verifikasi'] + st.Ditolak;
   el.innerHTML = `
-    <div class="page-h"><div><div class="eyebrow">Sistem Pelaporan</div><h1 class="h-lg" style="margin-top:4px">Dashboard Ringkasan &amp; Laporan</h1><p>Pemantauan transaksi, moderasi testimoni klien, dan analitik katalog aplikasi.</p></div>
-      <div class="acts"><select class="select" id="periode" style="width:auto;min-width:200px" aria-label="Periode laporan">${PERIODE.map((p) => `<option value="${p[0]}" ${p[0] === Adm.periode ? 'selected' : ''}>${p[0] === 'bulan_ini' ? dash.label : p[1]}</option>`).join('')}</select>
-        <button class="btn btn-secondary" id="csv">${icon('download')} Export Laporan (CSV)</button><button class="btn btn-accent" id="segar">${icon('refresh')} Perbarui Data</button></div></div>
+    <div class="page-h">
+      <div>
+        <h1 class="h-lg" style="margin:0">Ringkasan Bisnis</h1>
+        <p class="muted t-sm" style="margin:4px 0 0">Performa transaksi, pesanan klien, dan etalase katalog produk.</p>
+      </div>
+      <div class="acts">
+        <select class="select" id="periode" style="width:auto;min-width:180px" aria-label="Periode laporan">${PERIODE.map((p) => `<option value="${p[0]}" ${p[0] === Adm.periode ? 'selected' : ''}>${p[0] === 'bulan_ini' ? dash.label : p[1]}</option>`).join('')}</select>
+        <button class="btn btn-secondary btn-icon" id="segar" title="Segarkan Data" aria-label="Segarkan Data">${icon('refresh')}</button>
+        <button class="btn btn-secondary btn-sm" id="csv">${icon('download')} Export CSV</button>
+      </div>
+    </div>
     <div class="stats">
-      <div class="card stat"><div class="sh"><span class="lbl-mono">Antrean Validasi</span>${r.antrean ? '<span class="pill pill-err">Butuh Tindakan Segera</span>' : '<span class="pill pill-ok">Beres</span>'}</div><div class="sv">${r.antrean}<small>Pesanan</small></div><div class="sd">${r.antrean ? 'Bukti transfer baru diunggah dan menunggu konfirmasi Anda.' : 'Tidak ada pesanan yang menunggu verifikasi.'}</div><div class="sl">${r.antrean ? `<a href="#/admin/pesanan">Tinjau Sekarang ${icon('arrow-right')}</a>` : '<span></span>'}</div></div>
-      <div class="card stat"><div class="sh"><span class="lbl-mono">Total Pendapatan</span>${deltaHtml}</div><div class="sv" style="font-size:26px">${rupiah(r.pendapatan)}</div><div class="sd">Akumulasi dari <b style="color:var(--ink)">${r.pesanan_sukses}</b> pesanan sukses selama periode ini.</div><div class="sl"><span class="muted">${r.pesanan_periode} pesanan masuk</span></div></div>
-      <div class="card stat"><div class="sh"><span class="lbl-mono">Ulasan Klien</span>${r.testimoni_menunggu ? '<span class="pill pill-indigo">Perlu Dimoderasi</span>' : ''}</div><div class="sv">${r.testimoni_menunggu}<small>Testimoni</small></div><div class="sd">${r.testimoni_disetujui ? 'Rata-rata rating publik ' + r.rating_rata.toFixed(1) + ' dari 5 bintang.' : 'Belum ada testimoni yang tampil.'}</div><div class="sl"><a href="#/admin/testimoni">Buka Moderasi ${icon('arrow-right')}</a></div></div>
-      <div class="card stat"><div class="sh"><span class="lbl-mono">Inventaris Katalog</span></div><div class="sv">${r.aplikasi_total}<small>Aplikasi</small></div><div class="sd"><span style="color:var(--ok-t)">●</span> ${r.aplikasi_aktif} Aktif &nbsp; <span style="color:var(--faint)">●</span> ${r.aplikasi_segera} Segera Hadir</div><div class="sl"><a href="#/admin/aplikasi">Kelola Aplikasi ${icon('arrow-right')}</a></div></div></div>
-    ${r.email_gagal ? `<div class="alert warn" style="margin-bottom:24px">${icon('alert-triangle')}<div><b>${r.email_gagal} email keputusan gagal terkirim.</b> Buka <a href="#/admin/pesanan?tab=semua">Status Pesanan</a> lalu gunakan tombol Kirim Ulang pada pesanan bertanda "Gagal".</div></div>` : ''}
+      <div class="card stat">
+        <div class="sh">Total Pendapatan ${deltaHtml}</div>
+        <div class="sv">${rupiah(r.pendapatan)}</div>
+        <div class="sd">${r.pesanan_sukses} pesanan disetujui • ${r.pesanan_periode} masuk</div>
+      </div>
+      <div class="card stat">
+        <div class="sh">Antrean Validasi ${r.antrean ? '<span class="pill pill-err nodot">Perlu Dicek</span>' : '<span class="pill pill-ok nodot">Beres</span>'}</div>
+        <div class="sv">${r.antrean} <small>pesanan</small></div>
+        <div class="sd">${r.antrean ? 'Bukti bayar menunggu konfirmasi' : 'Semua pembayaran terverifikasi'}</div>
+      </div>
+      <div class="card stat">
+        <div class="sh">Katalog Aplikasi</div>
+        <div class="sv">${r.aplikasi_total} <small>produk</small></div>
+        <div class="sd">${r.aplikasi_aktif} aktif • ${r.aplikasi_segera} segera hadir</div>
+      </div>
+      <div class="card stat">
+        <div class="sh">Ulasan Klien ${r.testimoni_menunggu ? '<span class="pill pill-warn nodot">' + r.testimoni_menunggu + ' baru</span>' : ''}</div>
+        <div class="sv">${r.rating_rata ? r.rating_rata.toFixed(1) + ' ★' : '5.0 ★'}</div>
+        <div class="sd">${r.testimoni_disetujui} ulasan pembeli tampil</div>
+      </div>
+    </div>
+    ${r.email_gagal ? `<div class="alert warn" style="margin-bottom:20px">${icon('alert-triangle')}<div><b>${r.email_gagal} email keputusan gagal terkirim.</b> Buka <a href="#/admin/pesanan?tab=semua">Status Pesanan</a> untuk mengirim ulang.</div></div>` : ''}
     <div class="dash-grid">
-      <div class="card card-p"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><div class="lbl-mono">Analitik Transaksi</div><h2 class="h-md" style="margin-top:2px">Tren Penjualan &amp; Kunjungan Katalog</h2></div><div class="legend"><span><i style="background:#4F46E5"></i>Penjualan (IDR)</span><span><i style="background:#94A3B8"></i>Kunjungan</span></div></div>
-        <div style="display:flex;justify-content:space-between;align-items:flex-end;margin:16px 0 8px;gap:12px;flex-wrap:wrap"><div><div class="hint">Akumulasi ${esc(dash.label)}</div><div style="font-size:30px;font-weight:700;letter-spacing:-.025em">${rupiah(r.pendapatan)} <span class="muted" style="font-size:14px;font-weight:500">/ ${r.pesanan_sukses} Transaksi</span></div></div><div style="text-align:right"><div class="hint">Tingkat Konversi</div><b class="mono">${r.konversi === null ? '-' : r.konversi + '%'}</b> <span class="muted t-sm">(${r.kunjungan} kunjungan)</span></div></div>
+      <div class="card card-p">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:12px;flex-wrap:wrap">
+          <div>
+            <h2 class="h-sm" style="margin:0">Tren Penjualan &amp; Kunjungan</h2>
+            <div class="muted t-sm" style="margin-top:2px">${r.kunjungan} kunjungan • Konversi ${r.konversi === null ? '0%' : r.konversi + '%'}</div>
+          </div>
+          <div class="legend">
+            <span><i style="background:#4F46E5"></i>Penjualan</span>
+            <span><i style="background:#94A3B8"></i>Kunjungan</span>
+          </div>
+        </div>
         <div class="chart-box">${grafikTren(dash.deret, dash.mode)}</div>
-        ${puncak ? `<div class="insight">${icon('trending-up')}<div>Penjualan tertinggi tercatat pada <b>${esc(labelKunci(puncak.kunci, dash.mode))}</b> sebesar ${rupiah(puncak.pendapatan)}.</div></div>` : ''}</div>
-      <div style="display:flex;flex-direction:column;gap:16px"><div class="card card-p"><div style="display:flex;justify-content:space-between;align-items:center"><h2 class="h-sm">Distribusi Status Pesanan</h2><span class="lbl-mono">N = ${totalPes}</span></div>${barStatus(st)}</div>
-        <div class="card card-p" style="flex:1"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h2 class="h-sm">Aplikasi Terlaris</h2><span class="hint">Berdasarkan omzet</span></div>${barTerlaris(dash.terlaris)}</div></div></div>
-    <div class="card"><div class="tbl-head"><div><div class="lbl-mono">Log Transaksi</div><h2 class="h-md" style="margin-top:2px">Ringkasan Pesanan Terbaru</h2></div><div style="display:flex;gap:8px"><div class="ig" style="min-width:240px">${icon('search')}<input class="input" id="qd" placeholder="Cari kode atau pembeli..." value="${esc(Adm.qDash)}"></div></div></div>
-      <div style="padding:0 20px 16px" id="tabd"></div><div class="tbl-wrap" id="tbld"></div><div class="tbl-foot" id="fotd"></div></div>`;
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="card card-p">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <h2 class="h-sm" style="margin:0">Status Pesanan</h2>
+            <span class="muted t-sm">${totalPes} pesanan</span>
+          </div>
+          ${barStatus(st)}
+        </div>
+        <div class="card card-p" style="flex:1">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <h2 class="h-sm" style="margin:0">Aplikasi Terlaris</h2>
+            <span class="muted t-sm">Berdasarkan omzet</span>
+          </div>
+          ${barTerlaris(dash.terlaris)}
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="tbl-head" style="padding:16px 20px;border-bottom:1px solid var(--line)">
+        <div>
+          <h2 class="h-sm" style="margin:0">Pesanan Terbaru</h2>
+          <p class="muted t-sm" style="margin:2px 0 0">Transaksi paling baru yang masuk ke toko.</p>
+        </div>
+        <a class="btn btn-secondary btn-sm" href="#/admin/pesanan">Kelola Semua Pesanan ${icon('arrow-right')}</a>
+      </div>
+      <div class="tbl-wrap" id="tbld"></div>
+    </div>`;
   $('#periode').addEventListener('change', (e) => { Adm.periode = e.target.value; Adm.dash = null; jalankan(); });
   $('#segar').addEventListener('click', async () => {
     const b = $('#segar');
@@ -188,19 +245,10 @@ async function admRingkasan(c) {
     unduhCsv('laporan-pesanan-' + dash.periode + '.csv', [['Kode', 'Tanggal', 'Aplikasi', 'Versi', 'Nama', 'Email', 'WhatsApp', 'Nominal', 'Status', 'Tanggal Verifikasi', 'Status Email']].concat(data.map((o) => [o.kode, o.tanggal, o.aplikasi, o.versi, o.nama, o.email, o.wa, o.jumlah, o.status, o.tanggal_verifikasi, o.email_status])));
   });
   function tabelDash() {
-    const q = Adm.qDash.trim().toLowerCase();
-    const filt = orders.filter((o) => (Adm.tabDash === 'semua' || o.status === Adm.tabDash) && (!q || (o.kode + o.nama + o.email).toLowerCase().indexOf(q) >= 0));
-    const per = 5, hal = Math.min(Adm.halDash, Math.max(1, Math.ceil(filt.length / per))); Adm.halDash = hal;
-    const n = (s) => orders.filter((o) => o.status === s).length;
-    $('#tabd').innerHTML = `<div class="tabs seg-t">${[['semua', 'Semua', orders.length], ['Menunggu Verifikasi', 'Menunggu Verifikasi', n('Menunggu Verifikasi')], ['Disetujui', 'Disetujui', n('Disetujui')], ['Ditolak', 'Ditolak', n('Ditolak')]].map((t) => `<button class="${Adm.tabDash === t[0] ? 'on' : ''}" data-td="${t[0]}">${t[1]} <span class="n ${t[0] === 'Menunggu Verifikasi' && t[2] ? 'hot' : ''}">${t[2]}</span></button>`).join('')}</div>`;
-    $('#tbld').innerHTML = filt.length ? `<table class="tbl"><thead><tr><th>Kode Pesanan</th><th>Pembeli</th><th>Aplikasi</th><th>Nominal</th><th>Status Validasi</th><th>Waktu Masuk</th><th style="text-align:right">Aksi</th></tr></thead><tbody>${filt.slice((hal - 1) * per, hal * per).map(barisPesananRingkas).join('')}</tbody></table>` : `<div class="empty"><div class="em-ic">${icon('file-text')}</div><h3>Belum ada pesanan</h3><p>Pesanan yang masuk akan tampil di sini.</p></div>`;
-    const tot = Math.max(1, Math.ceil(filt.length / per));
-    $('#fotd').innerHTML = `<span>Menampilkan <b style="color:var(--ink)">${filt.length ? (hal - 1) * per + 1 : 0} - ${Math.min(filt.length, hal * per)}</b> dari <b style="color:var(--ink)">${filt.length}</b> transaksi</span><div class="pager" style="margin:0;padding:0;border:0"><div class="pg"><button data-hd="${hal - 1}" ${hal <= 1 ? 'disabled' : ''}>${icon('chevron-left')}</button>${Array.from({ length: tot }, (_, i) => `<button class="${i + 1 === hal ? 'on' : ''}" data-hd="${i + 1}">${i + 1}</button>`).join('')}<button data-hd="${hal + 1}" ${hal >= tot ? 'disabled' : ''}>${icon('chevron-right')}</button></div></div>`;
+    const terbaru = orders.slice(0, 5);
+    $('#tbld').innerHTML = terbaru.length ? `<table class="tbl"><thead><tr><th>Kode Pesanan</th><th>Pelanggan</th><th>Produk</th><th>Nominal</th><th>Status</th><th>Waktu</th><th style="text-align:right">Tindakan</th></tr></thead><tbody>${terbaru.map(barisPesananRingkas).join('')}</tbody></table>` : `<div class="empty" style="padding:28px"><div class="em-ic">${icon('file-text')}</div><h3>Belum ada pesanan</h3><p>Pesanan yang masuk akan tampil di sini.</p></div>`;
   }
   tabelDash();
-  $('#qd').addEventListener('input', debounce((e) => { Adm.qDash = e.target.value; Adm.halDash = 1; tabelDash(); }, 200));
-  on(el, 'click', '[data-td]', (e, t) => { Adm.tabDash = t.dataset.td; Adm.halDash = 1; tabelDash(); });
-  on(el, 'click', '[data-hd]', (e, t) => { Adm.halDash = +t.dataset.hd; tabelDash(); });
   on(el, 'click', '[data-alasan]', (e, t) => { const o = orders.find((x) => x.kode === t.dataset.alasan); modal(`<h3>Alasan penolakan</h3><p class="mono muted" style="font-size:12px">${esc(o.kode)}</p><div class="alert err" style="margin-top:12px">${icon('alert-triangle')}<div>${esc(o.catatan || '-')}</div></div><div class="act"><button class="btn btn-primary" data-m="ok">Tutup</button></div>`); });
 }
 
