@@ -1,44 +1,125 @@
 /* ============================================================
-   charts.js — grafik SVG ringan tanpa pustaka
+   charts.js — grafik SVG profesional & ringan tanpa pustaka
    ============================================================ */
 function labelKunci(k, mode) {
   if (mode === 'bulan') { const p = String(k).split('-'); return BLN[+p[1] - 1] + ' ' + String(p[0]).slice(2); }
   const p = String(k).split('-'); return +p[2] + ' ' + BLN[+p[1] - 1];
 }
 function singkatRp(n) {
-  if (n >= 1e6) return (Math.round(n / 1e5) / 10) + ' jt';
+  n = Math.round(Number(n) || 0);
+  if (n >= 1e9) return (n / 1e9).toFixed(1).replace('.0', '') + ' M';
+  if (n >= 1e6) return (n / 1e6).toFixed(1).replace('.0', '') + ' jt';
   if (n >= 1e3) return Math.round(n / 1e3) + ' rb';
   return String(n);
 }
-// Grafik area/garis: penjualan (garis tebal + area) & kunjungan (garis putus-putus)
+
+// Bantuan kurva spline Bezier halus
+function jalurKurva(pts) {
+  if (pts.length <= 1) return pts.map((p) => (p ? 'M ' + p[0].toFixed(1) + ' ' + p[1].toFixed(1) : '')).join(' ');
+  let d = 'M ' + pts[0][0].toFixed(1) + ' ' + pts[0][1].toFixed(1);
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[Math.max(0, i - 1)];
+    const p1 = pts[i];
+    const p2 = pts[i + 1];
+    const p3 = pts[Math.min(pts.length - 1, i + 2)];
+    const cp1x = p1[0] + (p2[0] - p0[0]) / 6;
+    const cp1y = p1[1] + (p2[1] - p0[1]) / 6;
+    const cp2x = p2[0] - (p3[0] - p1[0]) / 6;
+    const cp2y = p2[1] - (p3[1] - p1[1]) / 6;
+    d += ' C ' + cp1x.toFixed(1) + ' ' + cp1y.toFixed(1) + ', ' + cp2x.toFixed(1) + ' ' + cp2y.toFixed(1) + ', ' + p2[0].toFixed(1) + ' ' + p2[1].toFixed(1);
+  }
+  return d;
+}
+
+// Grafik area/garis: penjualan (garis kurva tebal + gradient area) & kunjungan (garis putus-putus)
 function grafikTren(deret, mode) {
   const n = deret.length;
   if (!n) return '<div class="empty" style="padding:32px">Belum ada data pada periode ini.</div>';
-  const W = 720, H = 250, pl = 12, pr = 12, pt = 16, pb = 30;
+  const W = 740, H = 260, pl = 58, pr = 16, pt = 20, pb = 32;
   const maxP = Math.max(1, ...deret.map((d) => d.pendapatan));
   const maxK = Math.max(1, ...deret.map((d) => d.kunjungan));
-  const x = (i) => (n === 1 ? W / 2 : pl + i * (W - pl - pr) / (n - 1));
+
+  const x = (i) => (n === 1 ? (pl + (W - pl - pr) / 2) : pl + i * (W - pl - pr) / (n - 1));
   const yP = (v) => pt + (H - pt - pb) * (1 - v / maxP);
   const yK = (v) => pt + (H - pt - pb) * (1 - v / maxK * 0.85);
-  const garis = (f, key) => deret.map((d, i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + f(d[key]).toFixed(1)).join(' ');
-  const areaP = garis(yP, 'pendapatan') + ' L' + x(n - 1).toFixed(1) + ' ' + (H - pb) + ' L' + x(0).toFixed(1) + ' ' + (H - pb) + ' Z';
+
+  // Sumbu Y & Garis Grid Horizontal
   let grid = '';
-  for (let i = 0; i <= 3; i++) { const y = pt + (H - pt - pb) * i / 3; grid += '<line x1="' + pl + '" x2="' + (W - pr) + '" y1="' + y + '" y2="' + y + '" stroke="#E2E8F0" stroke-width="1"/>'; }
-  const langkah = Math.max(1, Math.ceil(n / 6));
+  let yAxisLabels = '';
+  const ySteps = 3;
+  for (let i = 0; i <= ySteps; i++) {
+    const yVal = pt + (H - pt - pb) * i / ySteps;
+    const nominal = maxP * (1 - i / ySteps);
+    const teksNominal = i === ySteps ? '0' : singkatRp(nominal);
+    grid += '<line x1="' + pl + '" x2="' + (W - pr) + '" y1="' + yVal.toFixed(1) + '" y2="' + yVal.toFixed(1) + '" stroke="' + (i === ySteps ? '#CBD5E1' : 'rgba(226, 232, 240, 0.85)') + '" stroke-width="1"' + (i === ySteps ? '' : ' stroke-dasharray="3 3"') + '/>';
+    yAxisLabels += '<text x="' + (pl - 10) + '" y="' + (yVal + 3.5).toFixed(1) + '" text-anchor="end" font-size="10.5" fill="#94A3B8" font-family="JetBrains Mono, monospace">' + esc(teksNominal) + '</text>';
+  }
+
+  // Kurva data
+  const ptsP = deret.map((d, i) => [x(i), yP(d.pendapatan)]);
+  const ptsK = deret.map((d, i) => [x(i), yK(d.kunjungan)]);
+  const kurvaP = jalurKurva(ptsP);
+  const kurvaK = jalurKurva(ptsK);
+  const areaP = kurvaP + ' L ' + x(n - 1).toFixed(1) + ' ' + (H - pb) + ' L ' + x(0).toFixed(1) + ' ' + (H - pb) + ' Z';
+
+  // Label Sumbu X dengan pencegahan tabrakan pintar
+  const labelIndices = [];
+  const minGap = 68; // Jarak pixel minimal antar label tanggal
+  let lastX = -999;
+  for (let i = 0; i < n; i++) {
+    const curX = x(i);
+    const distFromEnd = x(n - 1) - curX;
+    if (i === 0) {
+      labelIndices.push(i);
+      lastX = curX;
+    } else if (i === n - 1) {
+      if (curX - lastX >= minGap * 0.72) {
+        labelIndices.push(i);
+      } else if (labelIndices.length > 1) {
+        labelIndices[labelIndices.length - 1] = i; // Gantikan label sebelum terakhir jika terlalu mepet
+      }
+    } else if (curX - lastX >= minGap && distFromEnd >= minGap) {
+      labelIndices.push(i);
+      lastX = curX;
+    }
+  }
+
   let lab = '';
-  deret.forEach((d, i) => { if (i % langkah === 0 || i === n - 1) lab += '<text x="' + x(i).toFixed(1) + '" y="' + (H - 8) + '" text-anchor="' + (i === 0 ? 'start' : i === n - 1 ? 'end' : 'middle') + '" font-size="11" fill="#64748B" font-family="JetBrains Mono, monospace">' + esc(labelKunci(d.kunci, mode)) + '</text>'; });
-  let titik = '';
-  if (n <= 45) deret.forEach((d, i) => {
-    const akhir = i === n - 1;
-    if (d.pendapatan > 0 || akhir) titik += '<circle cx="' + x(i).toFixed(1) + '" cy="' + yP(d.pendapatan).toFixed(1) + '" r="' + (akhir ? 5 : 3.5) + '" fill="' + (akhir ? '#4F46E5' : '#fff') + '" stroke="#4F46E5" stroke-width="2"><title>' + esc(labelKunci(d.kunci, mode) + ' — ' + rupiah(d.pendapatan) + ' · ' + d.kunjungan + ' kunjungan') + '</title></circle>';
+  labelIndices.forEach((i) => {
+    const anchor = i === 0 ? 'start' : i === n - 1 ? 'end' : 'middle';
+    lab += '<text x="' + x(i).toFixed(1) + '" y="' + (H - 10) + '" text-anchor="' + anchor + '" font-size="11" font-weight="500" fill="#64748B" font-family="JetBrains Mono, monospace">' + esc(labelKunci(deret[i].kunci, mode)) + '</text>';
   });
+
+  // Titik data (data dots) dengan tooltip informatif
+  let titik = '';
+  deret.forEach((d, i) => {
+    const akhir = i === n - 1;
+    const adaPenjualan = d.pendapatan > 0;
+    if (adaPenjualan || akhir) {
+      const cx = x(i).toFixed(1);
+      const cy = yP(d.pendapatan).toFixed(1);
+      titik += '<g class="chart-pt" style="cursor:pointer">';
+      if (adaPenjualan) {
+        titik += '<circle cx="' + cx + '" cy="' + cy + '" r="8" fill="rgba(79, 70, 229, 0.15)"/>';
+      }
+      titik += '<circle cx="' + cx + '" cy="' + cy + '" r="' + (akhir ? 5 : 4) + '" fill="' + (adaPenjualan || akhir ? '#4F46E5' : '#fff') + '" stroke="#fff" stroke-width="2"/>';
+      titik += '<title>' + esc(labelKunci(d.kunci, mode) + '\nPenjualan: ' + rupiah(d.pendapatan) + '\nKunjungan: ' + d.kunjungan + ' kali') + '</title></g>';
+    }
+  });
+
   const id = 'g' + Math.random().toString(36).slice(2, 7);
-  return '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Grafik tren penjualan dan kunjungan">' +
-    '<defs><linearGradient id="' + id + '" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#4F46E5" stop-opacity=".25"/><stop offset="1" stop-color="#4F46E5" stop-opacity="0"/></linearGradient></defs>' +
-    grid +
-    '<path d="' + garis(yK, 'kunjungan') + '" fill="none" stroke="#94A3B8" stroke-width="2" stroke-dasharray="4 4" stroke-linejoin="round"/>' +
+  return '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Grafik tren penjualan dan kunjungan" style="width:100%;height:auto;overflow:visible">' +
+    '<defs>' +
+      '<linearGradient id="' + id + '" x1="0" x2="0" y1="0" y2="1">' +
+        '<stop offset="0%" stop-color="#4F46E5" stop-opacity="0.22"/>' +
+        '<stop offset="85%" stop-color="#4F46E5" stop-opacity="0.02"/>' +
+        '<stop offset="100%" stop-color="#4F46E5" stop-opacity="0"/>' +
+      '</linearGradient>' +
+    '</defs>' +
+    grid + yAxisLabels +
+    '<path d="' + kurvaK + '" fill="none" stroke="#94A3B8" stroke-width="2" stroke-dasharray="4 4" stroke-linejoin="round" opacity="0.85"/>' +
     '<path d="' + areaP + '" fill="url(#' + id + ')"/>' +
-    '<path d="' + garis(yP, 'pendapatan') + '" fill="none" stroke="#4F46E5" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>' +
+    '<path d="' + kurvaP + '" fill="none" stroke="#4F46E5" stroke-width="2.75" stroke-linejoin="round" stroke-linecap="round"/>' +
     titik + lab + '</svg>';
 }
 function barStatus(st) {
