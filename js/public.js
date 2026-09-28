@@ -22,7 +22,7 @@ function layoutPublik(aktif) {
           <a href="#/testimoni" data-nav="testimoni">Kirim Testimoni</a>
           <a href="#/bantuan" data-nav="bantuan">Bantuan &amp; FAQ</a>
         </nav>
-        <div class="nav-act"><a class="btn btn-secondary btn-sm" href="#/admin">Area Admin</a></div>
+        <div class="nav-act"><a class="btn btn-secondary btn-icon" href="#/admin" title="Area Admin" aria-label="Area Admin">${icon('user')}</a></div>
       </div></header>
       <main id="page"></main>
       <footer class="footer" id="footer"></footer>`;
@@ -117,41 +117,25 @@ function gambarKatalog() {
     <div class="pg"><button data-hal="${hal - 1}" ${hal <= 1 ? 'disabled' : ''} aria-label="Sebelumnya">${icon('chevron-left')}</button>${nomor}<button data-hal="${hal + 1}" ${hal >= halTotal ? 'disabled' : ''} aria-label="Berikutnya">${icon('chevron-right')}</button></div>` : '';
   $$('.seg button').forEach((b) => b.classList.toggle('on', b.dataset.v === FK.tampil));
 }
-function sorotJudulHero(teks) {
-  if (!teks) return '';
-  const frasa = 'Aplikasi Web Siap Pakai';
-  const idx = teks.toLowerCase().indexOf(frasa.toLowerCase());
-  if (idx >= 0) {
-    const sebelum = teks.slice(0, idx);
-    const sasaran = teks.slice(idx, idx + frasa.length);
-    const sesudah = teks.slice(idx + frasa.length);
-    return `${esc(sebelum)}<span class="hero-highlight">${esc(sasaran)}</span>${esc(sesudah)}`;
-  }
-  const frasa2 = 'Aplikasi Web';
-  const idx2 = teks.toLowerCase().indexOf(frasa2.toLowerCase());
-  if (idx2 >= 0) {
-    const sebelum = teks.slice(0, idx2);
-    const sasaran = teks.slice(idx2, idx2 + frasa2.length);
-    const sesudah = teks.slice(idx2 + frasa2.length);
-    return `${esc(sebelum)}<span class="hero-highlight">${esc(sasaran)}</span>${esc(sesudah)}`;
-  }
-  return `<span class="hero-highlight">${esc(teks)}</span>`;
-}
 function pgKatalog(c) {
   let lencana = set('hero_lencana', '');
   if (/katalog\s*resmi/i.test(lencana)) {
     lencana = '';
   }
   const judul = set('hero_judul', APP_CONFIG.NAMA_DEFAULT);
-  const subjudul = set('hero_subjudul', set('tagline', 'Solusi aplikasi web modern, source code penuh, lisensi selamanya, tanpa biaya langganan bulanan.'));
+  const SUBJUDUL_KUSTOM = 'Temukan website siap pakai untuk kebutuhan Anda. Koleksi aplikasi web pilihan yang praktis, modern, dan mudah digunakan. Dapatkan **source code lengkap, tutorial penggunaan, serta dukungan yang jelas**. Pilih website yang sesuai, pesan dengan mudah, dan mulai gunakan untuk kebutuhan bisnis, pendidikan, maupun proyek pribadi.';
+  let subjudul = set('hero_subjudul');
+  if (!subjudul || /^koleksi aplikasi/i.test(subjudul.trim())) {
+    subjudul = SUBJUDUL_KUSTOM;
+  }
   const t2 = set('hero_trust_2', 'Full Source Code & Database');
   const t3 = set('hero_trust_3', 'Video Tutorial & Panduan Setup');
 
   c.el.innerHTML = `
     <section class="hero"><div class="container">
       ${lencana ? `<div class="eyebrow-pill"><i></i><span>${esc(lencana)}</span></div>` : ''}
-      <h1 class="h-xl">${sorotJudulHero(judul)}</h1>
-      ${subjudul ? `<p class="sub">${esc(subjudul)}</p>` : ''}
+      <h1 class="h-xl">${esc(judul)}</h1>
+      ${subjudul ? `<p class="sub">${mdInline(subjudul)}</p>` : ''}
       <div class="trust">
         <span>${icon('shield-check')} Transfer Bank Diverifikasi Admin</span>
         ${t2 ? `<span>${icon('check-circle')} ${esc(t2)}</span>` : ''}
