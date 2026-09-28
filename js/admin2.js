@@ -276,7 +276,7 @@ async function admPengaturan(c) {
   if (c.batal()) return;
   Adm.setting = d;
   const V = Object.assign({}, d.nilai);
-  if (!V.whatsapp) V.whatsapp = (window.APP_CONFIG && APP_CONFIG.WHATSAPP_DEFAULT) || '085655860383';
+  if (!V.whatsapp || /0000-0000|1234567890/i.test(V.whatsapp)) V.whatsapp = (window.APP_CONFIG && APP_CONFIG.WHATSAPP_DEFAULT) || '085655860383';
   let faq = await ambil('adminGetFaq');
   if (c.batal()) return;
   let kotor = false;

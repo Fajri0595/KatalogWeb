@@ -47,13 +47,19 @@ async function muatBootstrap() {
   const c = ss('kaw_boot');
   if (S.siap && c && c.u === lastUpdate) return;
   if (c && c.u === lastUpdate && Date.now() - c.t < 60 * 1000) {
-    S.pengaturan = c.d.pengaturan;
+    S.pengaturan = c.d.pengaturan || {};
+    if (!S.pengaturan.whatsapp || /0000-0000|1234567890|contoh/i.test(S.pengaturan.whatsapp)) {
+      S.pengaturan.whatsapp = (window.APP_CONFIG && APP_CONFIG.WHATSAPP_DEFAULT) || '085655860383';
+    }
     S.apps = c.d.aplikasi;
     S.siap = true;
     return;
   }
   const d = await API.get('getBootstrap');
   S.pengaturan = d.pengaturan || {};
+  if (!S.pengaturan.whatsapp || /0000-0000|1234567890|contoh/i.test(S.pengaturan.whatsapp)) {
+    S.pengaturan.whatsapp = (window.APP_CONFIG && APP_CONFIG.WHATSAPP_DEFAULT) || '085655860383';
+  }
   S.apps = d.aplikasi || [];
   S.siap = true;
   ss('kaw_boot', { t: Date.now(), u: lastUpdate, d });

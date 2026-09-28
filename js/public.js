@@ -2,7 +2,15 @@
    public.js — semua halaman untuk pengunjung/pembeli
    ============================================================ */
 const S = { pengaturan: {}, apps: [], detail: {}, faq: null, siap: false };
-const set = (k, cad) => (S.pengaturan && S.pengaturan[k] ? S.pengaturan[k] : (cad !== undefined ? cad : (k === 'whatsapp' ? ((window.APP_CONFIG && APP_CONFIG.WHATSAPP_DEFAULT) || '085655860383') : '')));
+const set = (k, cad) => {
+  const v = S.pengaturan && S.pengaturan[k];
+  if (k === 'whatsapp') {
+    const waDef = (window.APP_CONFIG && APP_CONFIG.WHATSAPP_DEFAULT) || '085655860383';
+    if (!v || /0000-0000|1234567890|contoh/i.test(v)) return waDef;
+    return v;
+  }
+  return (v !== undefined && v !== '') ? v : (cad !== undefined ? cad : '');
+};
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 function ss(k, v) { try { if (v === undefined) return JSON.parse(sessionStorage.getItem(k) || 'null'); if (v === null) sessionStorage.removeItem(k); else sessionStorage.setItem(k, JSON.stringify(v)); } catch (e) { return null; } }
@@ -32,12 +40,16 @@ function layoutPublik(aktif) {
   $('#brand-nama').textContent = set('nama_toko', APP_CONFIG.NAMA_DEFAULT);
   $$('.nav-links a').forEach((a) => a.classList.toggle('active', a.dataset.nav === aktif));
   const email = set('email_admin');
+  const waKontak = set('whatsapp');
   $('#footer').innerHTML = `<div class="container">
     <div class="foot-grid">
       <div><a class="brand" href="#/"><img src="assets/logo.svg" alt="">${esc(set('nama_toko', APP_CONFIG.NAMA_DEFAULT))}</a>
         <p class="muted" style="margin-top:12px;max-width:340px">${esc(set('tagline'))}</p></div>
       <div><h5>Tautan Cepat</h5><ul><li><a href="#/">Katalog</a></li><li><a href="#/bantuan">Panduan &amp; FAQ</a></li><li><a href="#/status">Cek Status</a></li><li><a href="#/testimoni">Kirim Testimoni</a></li></ul></div>
-      <div><h5>Hubungi Kami</h5><p class="muted">Kontak Developer:</p>${email ? `<a class="mono" style="font-size:13px" href="mailto:${esc(email)}">${esc(email)}</a>` : ''}</div>
+      <div><h5>Hubungi Kami</h5><p class="muted">Kontak Developer:</p>
+        ${email ? `<div style="margin-bottom:6px"><a class="mono" style="font-size:13px" href="mailto:${esc(email)}">${esc(email)}</a></div>` : ''}
+        ${waKontak ? `<div><a class="mono" style="font-size:13px;display:inline-flex;align-items:center;gap:6px;color:#25D366" href="${esc(linkWA(waKontak, 'Halo Admin, saya ingin bertanya seputar katalog aplikasi...'))}" target="_blank" rel="noopener noreferrer">${icon('whatsapp')} ${esc(waKontak)}</a></div>` : ''}
+      </div>
     </div>
     <div class="foot-bot"><span>© ${new Date().getFullYear()} ${esc(set('nama_toko', APP_CONFIG.NAMA_DEFAULT))}. Hak cipta dilindungi.</span><span class="mono" style="font-size:12px">${esc(set('kota'))}</span></div></div>`;
 
