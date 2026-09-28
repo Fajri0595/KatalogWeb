@@ -300,7 +300,6 @@ function hashAngka(s) { let h = 0; String(s || '').split('').forEach((c) => { h 
 function pratinjau(app, opsi) {
   opsi = opsi || {};
   const url = opsi.thumb !== undefined ? opsi.thumb : app.thumb;
-  const nama = (String(app.nama || 'app').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 22) || 'app') + '.app';
   const h = hashAngka(app.id || app.nama);
   let inner;
   if (url) inner = '<img class="shot" loading="lazy" alt="Tampilan ' + esc(app.nama) + '" src="' + esc(driveThumb(url, opsi.lebar || 640)) + '" onerror="this.replaceWith(Object.assign(document.createElement(\'div\'),{className:\'scr\',innerHTML:\'<div class=ln></div><div class=ln></div>\'}))">';
@@ -310,6 +309,6 @@ function pratinjau(app, opsi) {
     for (let i = 0; i < n; i++) baris += '<div class="ln ' + (['a', '', 'b', ''][(h + i) % 4]) + '" style="width:' + (55 + ((h >> i) % 40)) + '%"></div>';
     inner = '<div class="scr">' + baris + '</div>';
   }
-  return '<div class="pv ' + (opsi.besar ? 'big' : '') + '"><div class="bar"><i></i><i></i><i></i><span>' + esc(opsi.alamat || nama) + '</span></div>' + inner + '</div>';
+  return '<div class="pv ' + (opsi.besar ? 'big' : '') + '">' + inner + '</div>';
 }
 function inputWaktuSekarang() { return new Date().toISOString(); }
