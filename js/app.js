@@ -33,15 +33,30 @@ function cocokRute(path) {
   return null;
 }
 
-function bersihkanCachePublik() { ss('kaw_boot', null); S.siap = false; S.detail = {}; S.faq = null; }
+function bersihkanCachePublik() {
+  try { localStorage.setItem('kaw_last_update', String(Date.now())); } catch (e) {}
+  ss('kaw_boot', null);
+  S.siap = false;
+  S.detail = {};
+  S.faq = null;
+}
 
 async function muatBootstrap() {
-  if (S.siap) return;
+  let lastUpdate = '0';
+  try { lastUpdate = localStorage.getItem('kaw_last_update') || '0'; } catch (e) {}
   const c = ss('kaw_boot');
-  if (c && Date.now() - c.t < 5 * 60 * 1000) { S.pengaturan = c.d.pengaturan; S.apps = c.d.aplikasi; S.siap = true; return; }
+  if (S.siap && c && c.u === lastUpdate) return;
+  if (c && c.u === lastUpdate && Date.now() - c.t < 60 * 1000) {
+    S.pengaturan = c.d.pengaturan;
+    S.apps = c.d.aplikasi;
+    S.siap = true;
+    return;
+  }
   const d = await API.get('getBootstrap');
-  S.pengaturan = d.pengaturan || {}; S.apps = d.aplikasi || []; S.siap = true;
-  ss('kaw_boot', { t: Date.now(), d });
+  S.pengaturan = d.pengaturan || {};
+  S.apps = d.aplikasi || [];
+  S.siap = true;
+  ss('kaw_boot', { t: Date.now(), u: lastUpdate, d });
 }
 
 function skelHalaman() {

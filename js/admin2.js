@@ -198,10 +198,17 @@ async function admAplikasiForm(c) {
     };
     try {
       const r = await ambil('adminSaveApp', payload);
-      toast(r.pesan, 'ok'); bersih(); bersihkanCachePublik(); Adm.apps = null;
-      location.hash = '#/admin/aplikasi/' + r.id;
-      if (baru) jalankan();
-    } catch (e) { toast(e.message, 'err', 6000); tombolBusy(btn, false); }
+      toast(r.pesan, 'ok');
+      bersih();
+      bersihkanCachePublik();
+      Adm.apps = null;
+      location.hash = '#/admin/aplikasi';
+      jalankan();
+    } catch (e) {
+      toast(e.message, 'err', 6000);
+    } finally {
+      tombolBusy(btn, false);
+    }
   });
 }
 
