@@ -69,6 +69,7 @@ async function jalankan() {
   const batal = () => id !== tokenRender;
   const { path, query } = parseHash();
   window.scrollTo(0, 0);
+  document.body.classList.remove('has-buybar');
 
   if (path === '/admin' || path.indexOf('/admin/') === 0) {
     document.title = 'Admin — ' + (S.pengaturan.nama_toko || APP_CONFIG.NAMA_DEFAULT);

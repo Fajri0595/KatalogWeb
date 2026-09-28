@@ -40,6 +40,26 @@ function layoutPublik(aktif) {
       <div><h5>Hubungi Kami</h5><p class="muted">Kontak Developer:</p>${email ? `<a class="mono" style="font-size:13px" href="mailto:${esc(email)}">${esc(email)}</a>` : ''}</div>
     </div>
     <div class="foot-bot"><span>© ${new Date().getFullYear()} ${esc(set('nama_toko', APP_CONFIG.NAMA_DEFAULT))}. Hak cipta dilindungi.</span><span class="mono" style="font-size:12px">${esc(set('kota'))}</span></div></div>`;
+
+  const waNo = set('whatsapp');
+  let waEl = $('#wa-float');
+  if (waNo) {
+    const waLink = linkWA(waNo, 'Halo Admin, saya sedang melihat katalog aplikasi web di situs Anda dan ingin bertanya.');
+    if (!waEl) {
+      waEl = document.createElement('a');
+      waEl.className = 'wa-float';
+      waEl.id = 'wa-float';
+      waEl.target = '_blank';
+      waEl.rel = 'noopener noreferrer';
+      waEl.setAttribute('aria-label', 'Chat WhatsApp');
+      waEl.innerHTML = '<span class="wa-float-pulse"></span>' + icon('whatsapp', 'wa-float-icon') + '<span>Tanya Kami</span>';
+      document.body.appendChild(waEl);
+    }
+    waEl.href = waLink;
+    waEl.classList.remove('hide');
+  } else if (waEl) {
+    waEl.classList.add('hide');
+  }
 }
 
 function galat(el, err, ulang) {
@@ -199,7 +219,12 @@ async function pgDetail(c) {
   if (d.thumb) tiles.push({ id: d.thumb, label: 'Tampilan Utama' });
   (d.galeri || []).forEach((g, i) => tiles.push({ id: g.id, label: g.label || 'Foto ' + (i + 1) }));
   const alamat = d.link_demo ? d.link_demo.replace(/^https?:\/\//, '').slice(0, 40) : null;
-  const rating = d.rating || { rata: 0, jumlah: 0 };
+  const waNo = set('whatsapp');
+  const tombolWA = waNo ? `
+    <a class="btn btn-wa-outline btn-lg btn-block" style="margin-top:10px" href="${esc(linkWA(waNo, `Halo Admin, saya tertarik dengan aplikasi "${d.nama}" (v${d.versi || '1.0'}). Mau tanya beberapa hal sebelum memesan:\n${location.href}`))}" target="_blank" rel="noopener noreferrer">
+      ${icon('whatsapp')} Tanya / Konsultasi via WA
+    </a>
+  ` : '';
   const tombolPesan = tersedia
     ? `<a class="btn btn-primary btn-lg btn-block" href="#/pesan/${esc(d.id)}">${icon('cart')} Pesan Sekarang (Tanpa Akun)</a>`
     : `<button class="btn btn-secondary btn-lg btn-block" disabled>Segera Hadir</button>`;
@@ -220,6 +245,7 @@ async function pgDetail(c) {
         <div style="margin:20px 0 4px"><span class="price" style="font-size:36px;line-height:40px;letter-spacing:-.025em">${rupiah(d.harga)}</span> ${d.harga_coret ? `<s class="muted mono" style="font-size:13px;margin-left:6px">${rupiah(d.harga_coret)}</s>` : ''}</div>
         <div class="hint" style="margin-bottom:16px">sekali bayar • lisensi selamanya</div>
         ${tombolPesan}
+        ${tombolWA}
         ${d.link_demo ? `<div style="text-align:center;margin-top:12px"><a class="link-btn t-sm" href="${esc(urlAman(d.link_demo))}" target="_blank" rel="noopener noreferrer">${icon('eye')} Lihat Demo Publik ${icon('external-link')}</a></div>` : ''}
         <div class="note-i" style="margin-top:16px">${icon('shield-check')}<div>Transfer manual diverifikasi oleh admin dalam ${esc(set('sla_verifikasi', '1×24 jam'))}. Link akses privat dikirim langsung ke email Anda setelah pembayaran disetujui.</div></div>
         <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:16px;font-size:12px;color:var(--muted)"><span>${icon('check-circle')} Tanpa perlu akun</span><span>${icon('check-circle')} Akses via email</span></div>
@@ -243,6 +269,7 @@ async function pgDetail(c) {
       </aside>
     </div></div>
     <div class="buy-bar"><div><div class="price">${rupiah(d.harga)}</div><div class="hint">sekali bayar</div></div>${tersedia ? `<a class="btn btn-primary" href="#/pesan/${esc(d.id)}">Pesan Sekarang</a>` : '<button class="btn btn-secondary" disabled>Segera Hadir</button>'}</div>`;
+  document.body.classList.add('has-buybar');
   bindVideo(c.el);
   let aktifTile = 0;
   on(c.el, 'click', '[data-tile]', (e, t) => {
@@ -267,7 +294,7 @@ function pgPesan(c) {
   if (a.status !== 'Tersedia') { c.el.innerHTML = `<div class="container"><div class="card empty" style="margin-top:48px"><div class="em-ic">${icon('clock')}</div><h3>Aplikasi ini belum dapat dipesan</h3><p>${esc(a.nama)} berstatus Segera Hadir.</p><a class="btn btn-primary" style="margin-top:16px" href="#/aplikasi/${esc(a.id)}">Kembali ke Detail</a></div></div>`; return; }
   document.title = 'Pesan ' + a.nama + ' — ' + set('nama_toko', APP_CONFIG.NAMA_DEFAULT);
   const bankNo = set('bank_nomor'), bankNm = set('bank_nama');
-  const st = { bukti: null };
+  const st = { bukti: null, kupon: null, diskon: 0, total: a.harga };
   c.el.innerHTML = `<div class="container">
     <div class="stepper" id="stepper"></div>
     <form class="ord" id="fpesan" novalidate>
@@ -301,7 +328,13 @@ function pgPesan(c) {
               <span class="pill pill-ok nodot" style="background:rgba(16,185,129,0.2);color:#A7F3D0;border-color:rgba(167,243,208,0.4)">${icon('shield-check')} Terverifikasi</span>
             </div>
           </div>
-          <div class="nominal"><div><div class="nl">${icon('credit-card')} Nominal tepat yang harus ditransfer</div><div class="muted t-sm" style="margin-top:2px;max-width:420px">${esc(set('catatan_transfer'))}</div></div><div class="amt">${rupiah(a.harga)}</div></div>
+          <div class="nominal"><div><div class="nl">${icon('credit-card')} Nominal tepat yang harus ditransfer</div><div class="muted t-sm" style="margin-top:2px;max-width:420px">${esc(set('catatan_transfer'))}</div></div><div class="amt" id="transfer-amt">${rupiah(a.harga)}</div></div>
+          ${set('whatsapp') ? `
+            <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.06);padding:10px 14px;border-radius:8px">
+              <span class="t-sm" style="color:#CBD5E1;display:inline-flex;align-items:center;gap:6px">${icon('whatsapp')} Butuh bantuan saat transfer?</span>
+              <a class="btn btn-sm btn-wa" href="${esc(linkWA(set('whatsapp'), `Halo Admin, saya sedang memesan "${a.nama}". Ingin konfirmasi mengenai pembayaran transfer...`))}" target="_blank" rel="noopener noreferrer">Chat Admin</a>
+            </div>
+          ` : ''}
         </section>
         <section class="card card-p">
           <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px"><div class="sec-title"><span class="dot"></span>Unggah Bukti Transfer <span class="req">*</span></div><span class="pill pill-mute nodot" id="bukti-st">Belum ada berkas</span></div>
@@ -314,8 +347,17 @@ function pgPesan(c) {
       <aside class="ord-side">
         <div class="card card-p"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><div class="h-sm">Ringkasan Pesanan</div><span class="lbl-mono">ID: ORD-TEMP</span></div>
           <div class="mini-app"><div class="mt">${pratinjau(a, { lebar: 200 })}</div><div style="min-width:0"><div class="mono" style="font-size:11px;color:var(--indigo)">v${esc(a.versi || '-')} • Web App</div><div class="h-sm" style="margin:2px 0">${esc(a.nama)}</div><div class="mono muted" style="font-size:11px">Lisensi ${esc(a.lisensi || 'Full Access')}</div></div></div>
-          <div style="margin-top:16px"><div class="sumrow"><span class="muted">Harga Lisensi</span><span class="mono">${rupiah(a.harga)}</span></div><div class="sumrow"><span class="muted">Biaya Verifikasi Sistem</span><span class="mono" style="color:var(--ok-t)">Rp 0 (Gratis)</span></div></div>
-          <div class="total-box"><div><div class="lbl-mono">Total Pembayaran</div></div><div class="amt">${rupiah(a.harga)}</div></div>
+          <div style="margin-top:16px">
+            <div class="sumrow"><span class="muted">Harga Lisensi</span><span class="mono">${rupiah(a.harga)}</span></div>
+            <div id="sum-discount"></div>
+            <div class="sumrow"><span class="muted">Biaya Verifikasi Sistem</span><span class="mono" style="color:var(--ok-t)">Rp 0 (Gratis)</span></div>
+          </div>
+          <div class="total-box"><div><div class="lbl-mono">Total Pembayaran</div></div><div class="amt" id="total-amt">${rupiah(a.harga)}</div></div>
+          <div class="coupon-box">
+            <label class="lbl-mono" style="margin-bottom:6px;display:block">${icon('tag')} Punya Kode Promo?</label>
+            <div id="coupon-area"></div>
+            <div id="coupon-msg" class="coupon-err hide"></div>
+          </div>
           <div class="note-i" style="margin-top:16px;background:var(--alt);color:var(--text-2)">${icon('shield-check')}<div>Pesanan diproses tanpa perlu membuat akun. Simpan <b>Kode Pesanan</b> yang Anda dapatkan setelah menekan tombol kirim.</div></div>
         </div>
         <div class="card card-p-sm" style="display:flex;gap:12px;align-items:flex-start"><span class="avatar" style="background:var(--ok-bg);color:var(--ok)">${icon('shield-check')}</span><div><b class="t-sm">${esc(set('garansi_order_judul'))}</b><p class="muted t-sm" style="margin-top:2px">${esc(set('garansi_order_teks'))}</p></div></div>
@@ -421,6 +463,95 @@ function pgPesan(c) {
   }
   bindDropzone($('#dz'), $('#berkas'), pilihBerkas);
   stepper();
+
+  const kuponToko = ambilDaftarKupon(S.pengaturan);
+  function renderKupon() {
+    const area = $('#coupon-area', c.el);
+    const msg = $('#coupon-msg', c.el);
+    const sDisc = $('#sum-discount', c.el);
+    const totEl = $('#total-amt', c.el);
+    const tfEl = $('#transfer-amt', c.el);
+    if (!area) return;
+
+    if (!st.kupon) {
+      area.innerHTML = `
+        <div class="coupon-input-group">
+          <input class="input mono" id="kd-kupon" placeholder="Contoh: DISKON10" maxlength="25" style="text-transform:uppercase">
+          <button class="btn btn-secondary btn-sm" type="button" id="btn-kupon">Terapkan</button>
+        </div>
+      `;
+      if (msg) { msg.classList.add('hide'); msg.innerHTML = ''; }
+      if (sDisc) sDisc.innerHTML = '';
+      if (totEl) totEl.textContent = rupiah(a.harga);
+      if (tfEl) tfEl.textContent = rupiah(a.harga);
+
+      const btn = $('#btn-kupon', area);
+      const inp = $('#kd-kupon', area);
+      if (btn && inp) {
+        const applyFn = () => {
+          const raw = inp.value.trim().toUpperCase();
+          if (!raw) {
+            msg.innerHTML = icon('alert-circle') + ' Masukkan kode kupon promo.';
+            msg.classList.remove('hide');
+            return;
+          }
+          const item = kuponToko.find((k) => k.kode === raw && k.aktif !== false);
+          if (!item) {
+            msg.innerHTML = icon('alert-circle') + ' Kode promo tidak valid atau telah berakhir.';
+            msg.classList.remove('hide');
+            return;
+          }
+          if (item.min && a.harga < item.min) {
+            msg.innerHTML = icon('alert-circle') + ` Kupon berlaku untuk minimal belanja ${rupiah(item.min)}.`;
+            msg.classList.remove('hide');
+            return;
+          }
+          let pot = 0;
+          if (item.tipe === 'persen') {
+            pot = Math.round(a.harga * (item.nilai / 100));
+            if (item.maks && pot > item.maks) pot = item.maks;
+          } else {
+            pot = item.nilai;
+          }
+          pot = Math.min(a.harga, pot);
+          st.kupon = item;
+          st.diskon = pot;
+          st.total = Math.max(0, a.harga - pot);
+          renderKupon();
+          toast(`Kupon ${item.kode} berhasil dipasang! Hemat ${rupiah(pot)}.`, 'ok');
+        };
+        btn.addEventListener('click', applyFn);
+        inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); applyFn(); } });
+      }
+    } else {
+      area.innerHTML = `
+        <div class="coupon-applied">
+          <div class="coupon-applied-info">
+            <span class="pill pill-ok nodot" style="height:22px;padding:0 8px;font-size:11px">${icon('tag')} <b class="mono">${esc(st.kupon.kode)}</b></span>
+            <span class="t-sm" style="color:var(--ok-t);font-weight:600">Hemat ${rupiah(st.diskon)}</span>
+          </div>
+          <button class="btn btn-ghost btn-sm" type="button" id="btn-hapus-kupon" style="padding:0 8px">${icon('trash')} Hapus</button>
+        </div>
+      `;
+      if (msg) { msg.classList.add('hide'); msg.innerHTML = ''; }
+      if (sDisc) sDisc.innerHTML = `<div class="sumrow discount"><span>Diskon Promo (${esc(st.kupon.kode)})</span><span class="mono">-${rupiah(st.diskon)}</span></div>`;
+      if (totEl) totEl.textContent = rupiah(st.total);
+      if (tfEl) tfEl.textContent = rupiah(st.total);
+
+      const hps = $('#btn-hapus-kupon', area);
+      if (hps) {
+        hps.addEventListener('click', () => {
+          st.kupon = null;
+          st.diskon = 0;
+          st.total = a.harga;
+          renderKupon();
+          toast('Kupon dihapus.', 'info');
+        });
+      }
+    }
+  }
+  renderKupon();
+
   $('#fpesan').addEventListener('submit', async (e) => {
     e.preventDefault();
     const ok = { nama: cek.nama(), email: cek.email(), wa: cek.wa() };
@@ -429,10 +560,17 @@ function pgPesan(c) {
     if (!(ok.nama && ok.email && ok.wa && st.bukti)) { toast('Lengkapi data yang ditandai merah.', 'warn'); const g = $('.has-error', c.el); if (g) g.scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
     const btn = $('#kirim'); tombolBusy(btn, true, 'Mengirim pesanan...');
     try {
-      const r = await API.post('createOrder', {
+      const payload = {
         id_aplikasi: a.id, nama: f.nama.value.trim(), email: f.email.value.trim(), wa: f.wa.value.trim(), website: $('#website').value,
-        bukti: { nama: st.bukti.nama, mime: st.bukti.mime, base64: st.bukti.base64 }
-      }, { timeout: 120000 });
+        bukti: { nama: st.bukti.nama, mime: st.bukti.mime, base64: st.bukti.base64 },
+        kode_kupon: st.kupon ? st.kupon.kode : '',
+        diskon: st.diskon || 0,
+        total_bayar: st.total
+      };
+      const r = await API.post('createOrder', payload, { timeout: 120000 });
+      r.kode_kupon = st.kupon ? st.kupon.kode : '';
+      r.diskon = st.diskon || 0;
+      r.total_bayar = st.total;
       ss('kaw_order', r); ss('kaw_verif', { kode: r.kode, email: r.email });
       location.hash = '#/berhasil';
     } catch (err) { tombolBusy(btn, false); toast(err.message, 'err', 6500); }
@@ -445,6 +583,7 @@ function pgPesan(c) {
 function pgBerhasil(c) {
   const o = ss('kaw_order');
   if (!o) { location.hash = '#/'; return; }
+  const totalAkhir = o.total_bayar !== undefined ? o.total_bayar : o.jumlah;
   c.el.innerHTML = `<div class="container"><div class="card center-card" style="text-align:center">
     <div class="big-check">${icon('check')}</div>
     <div style="margin-bottom:12px">${pil('Menunggu Verifikasi')}</div>
@@ -453,7 +592,8 @@ function pgBerhasil(c) {
     <div class="refbox"><div class="lbl-mono">Nomor Referensi / Kode Pesanan</div><div class="code">${esc(o.kode)}<button class="btn btn-secondary btn-sm" id="salin">${icon('copy')} Salin Kode</button></div><p class="hint" style="margin-top:8px">Simpan kode pesanan ini untuk mengecek status pesanan atau mengirim testimoni nanti.</p></div>
     <div style="text-align:left"><div class="kv"><span>Aplikasi</span><span>${esc(o.aplikasi)} <span class="mono" style="color:var(--indigo)">(v${esc(o.versi)})</span></span></div>
       <div class="kv"><span>Email Pembeli</span><span class="mono">${esc(o.email)}</span></div>
-      <div class="kv"><span>Total Pembayaran</span><span>${rupiah(o.jumlah)} <span class="muted">(Transfer Bank)</span></span></div>
+      <div class="kv"><span>Total Pembayaran</span><span>${rupiah(totalAkhir)} <span class="muted">(Transfer Bank)</span></span></div>
+      ${o.diskon ? `<div class="kv"><span>Diskon Promo (${esc(o.kode_kupon)})</span><span class="mono" style="color:var(--ok-t)">-${rupiah(o.diskon)}</span></div>` : ''}
       <div class="kv"><span>Berkas Terunggah</span><span class="mono" style="font-size:13px;overflow-wrap:anywhere">${esc(o.nama_file)} <span class="muted">(${ukuranBerkas(o.ukuran)})</span></span></div>
       <div class="kv"><span>Tanggal Pesanan</span><span>${esc(tgl(o.tanggal, true))}</span></div></div>
     <div class="note-i" style="text-align:left;margin:20px 0">${icon('mail')}<div><b>Instruksi Pengiriman Berkas</b><br>Setelah pembayaran disetujui, kami mengirim email resmi berisi tanda terima (PDF), tautan akses privat aplikasi, serta video tutorial instalasi. Cek juga folder spam.</div></div>

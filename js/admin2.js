@@ -290,8 +290,24 @@ async function admPengaturan(c) {
     <div id="panel" style="padding-top:20px"></div>
     <div class="stickybar"><span class="st-l" id="dirty"><i></i> Tersimpan</span><div class="sp"><button class="btn btn-secondary" id="uji-email">${icon('mail')} Kirim Email Uji</button><button class="btn btn-primary" id="simpan">${icon('check')} Simpan Pengaturan</button></div></div>`;
 
-  const TABS = [['rekening', 'Rekening Bank', 'landmark'], ['kontak', 'Kontak &amp; Bantuan', 'message-circle'], ['halaman', 'Konten Halaman', 'layers'], ['faq', 'FAQ', 'help-circle'], ['email', 'Template Email', 'mail'], ['integrasi', 'Integrasi &amp; Akun', 'database']];
+  const TABS = [
+    ['rekening', 'Rekening Bank', 'landmark'],
+    ['kupon', 'Kupon Promo', 'percent'],
+    ['kontak', 'Kontak &amp; Bantuan', 'message-circle'],
+    ['halaman', 'Konten Halaman', 'layers'],
+    ['faq', 'FAQ', 'help-circle'],
+    ['email', 'Template Email', 'mail'],
+    ['integrasi', 'Integrasi &amp; Akun', 'database']
+  ];
   $('#tabs').innerHTML = TABS.map((t) => `<button class="${AdmP.tab === t[0] ? 'on' : ''}" data-ptab="${t[0]}">${icon(t[2])} ${t[1]}</button>`).join('');
+
+  let kuponList = ambilDaftarKupon(V);
+  if (!kuponList.length && V.kupon_promo === undefined) {
+    kuponList = [
+      { kode: 'DISKON10', tipe: 'persen', nilai: 10, min: 0, maks: 50000, ket: 'Diskon 10% (Maksimal Rp 50.000)', aktif: true }
+    ];
+    V.kupon_promo = JSON.stringify(kuponList);
+  }
 
   function inp(k, label, opsi) {
     opsi = opsi || {};
@@ -303,6 +319,126 @@ async function admPengaturan(c) {
       ${inp('bank_atas_nama', 'Nama Pemilik Rekening')}${inp('catatan_transfer', 'Catatan Instruksi Transfer untuk Pembeli', { area: true, maks: 400 })}</div>
       <div class="bank-card"><small>Rekening Penampung Toko</small><div class="bn">${esc(V.bank_nama || '-')}</div><small>Nomor Rekening</small><div class="no">${esc(V.bank_nomor || '-')}</div><small>Atas Nama</small><div class="an">${esc(V.bank_atas_nama || '-')}</div></div></div>`;
   }
+  function panelKupon() {
+    return `<div class="card card-p">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+        <div><h2 class="h-md">Kode Promo &amp; Kupon Diskon</h2><p class="muted t-sm" style="margin-top:2px">Kelola voucher promo belanja untuk strategi pemasaran dan diskon calon pembeli.</p></div>
+        <button class="btn btn-primary btn-sm" type="button" id="addkupon">${icon('plus')} Tambah Kupon Baru</button>
+      </div>
+      <div id="kuponwrap" style="display:flex;flex-direction:column;gap:10px"></div>
+    </div>`;
+  }
+  function gambarKupon() {
+    const wrap = $('#kuponwrap');
+    if (!wrap) return;
+    if (!kuponList.length) {
+      wrap.innerHTML = `<div class="empty" style="padding:24px"><div class="em-ic">${icon('percent')}</div><h3>Belum ada kupon diskon</h3><p>Klik tombol "Tambah Kupon Baru" untuk membuat voucher promo pertama Anda.</p></div>`;
+      return;
+    }
+    wrap.innerHTML = kuponList.map((k, i) => `
+      <div class="kupon-card">
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <span class="kupon-code">${icon('tag')} ${esc(k.kode)}</span>
+            <span class="pill ${k.aktif ? 'pill-ok' : 'pill-mute'} nodot">${k.aktif ? 'Aktif' : 'Nonaktif'}</span>
+          </div>
+          <div style="font-size:14px;font-weight:600;color:var(--ink);margin-top:2px">
+            ${k.tipe === 'persen' ? `Potongan ${k.nilai}% ${k.maks ? '(Maks. ' + rupiah(k.maks) + ')' : ''}` : `Potongan ${rupiah(k.nilai)}`}
+            ${k.min ? `<span class="muted t-sm" style="font-weight:400">• Min. Belanja ${rupiah(k.min)}</span>` : '<span class="muted t-sm" style="font-weight:400">• Tanpa Min. Belanja</span>'}
+          </div>
+          ${k.ket ? `<div class="muted t-sm">${esc(k.ket)}</div>` : ''}
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <label class="switch" title="${k.aktif ? 'Nonaktifkan' : 'Aktifkan'}">
+            <input type="checkbox" data-tgl-kupon="${i}" ${k.aktif ? 'checked' : ''}>
+          </label>
+          <button class="btn btn-secondary btn-sm" type="button" data-edit-kupon="${i}">${icon('pencil')} Edit</button>
+          <button class="btn btn-ghost btn-sm btn-icon" type="button" data-rm-kupon="${i}" aria-label="Hapus">${icon('trash')}</button>
+        </div>
+      </div>
+    `).join('');
+  }
+  async function modalKupon(data, idx) {
+    const isEdit = typeof idx === 'number';
+    const init = data || { kode: '', tipe: 'persen', nilai: 10, min: 0, maks: 0, ket: '', aktif: true };
+    const res = await modal(`
+      <h3>${isEdit ? 'Edit Kupon Promo' : 'Tambah Kupon Promo Baru'}</h3>
+      <div class="field" style="margin-top:12px">
+        <label>Kode Kupon <span class="req">*</span></label>
+        <input class="input mono" id="m_kode" maxlength="25" placeholder="Contoh: DISKON10" style="text-transform:uppercase" value="${esc(init.kode)}">
+        <div class="hint">Huruf kapital &amp; angka tanpa spasi (misal: LAUNCHING, DISKON20).</div>
+      </div>
+      <div class="row c2">
+        <div class="field">
+          <label>Tipe Diskon</label>
+          <select class="select" id="m_tipe">
+            <option value="persen" ${init.tipe === 'persen' ? 'selected' : ''}>Persentase (%)</option>
+            <option value="nominal" ${init.tipe === 'nominal' ? 'selected' : ''}>Nominal Tetap (Rp)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Besar Diskon <span class="req">*</span></label>
+          <input class="input mono" id="m_nilai" type="number" min="1" placeholder="Misal: 10 atau 25000" value="${init.nilai || ''}">
+        </div>
+      </div>
+      <div class="row c2">
+        <div class="field">
+          <label>Minimal Belanja <span class="opt">(0 jika tanpa minimum)</span></label>
+          <input class="input mono" id="m_min" type="number" min="0" placeholder="0" value="${init.min || 0}">
+        </div>
+        <div class="field" id="m_maks_field">
+          <label>Maksimal Potongan <span class="opt">(opsional untuk %)</span></label>
+          <input class="input mono" id="m_maks" type="number" min="0" placeholder="0" value="${init.maks || 0}">
+        </div>
+      </div>
+      <div class="field">
+        <label>Keterangan / Catatan Singkat <span class="opt">(opsional)</span></label>
+        <input class="input" id="m_ket" maxlength="150" placeholder="Contoh: Promo khusus peluncuran produk" value="${esc(init.ket || '')}">
+      </div>
+      <label class="check" style="margin:12px 0 16px">
+        <input type="checkbox" id="m_aktif" ${init.aktif ? 'checked' : ''}>
+        <span>Kupon aktif dan siap digunakan pembeli di checkout</span>
+      </label>
+      <div class="act">
+        <button class="btn btn-secondary" data-m="no">Batal</button>
+        <button class="btn btn-primary" data-m="ok">Simpan Kupon</button>
+      </div>
+    `, {
+      ambil: (m) => {
+        const kode = $('#m_kode', m).value.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+        const tipe = $('#m_tipe', m).value;
+        const nilai = +$('#m_nilai', m).value;
+        const min = +$('#m_min', m).value || 0;
+        const maks = +$('#m_maks', m).value || 0;
+        const ket = $('#m_ket', m).value.trim();
+        const aktif = $('#m_aktif', m).checked;
+        if (!kode || kode.length < 3) {
+          toast('Kode kupon minimal 3 karakter.', 'warn');
+          return false;
+        }
+        if (!nilai || nilai <= 0) {
+          toast('Besar diskon harus lebih dari 0.', 'warn');
+          return false;
+        }
+        if (tipe === 'persen' && nilai > 100) {
+          toast('Diskon persentase tidak boleh lebih dari 100%.', 'warn');
+          return false;
+        }
+        return { kode, tipe, nilai, min, maks, ket, aktif };
+      }
+    });
+    if (!res) return;
+    if (isEdit) {
+      kuponList[idx] = res;
+    } else {
+      kuponList.push(res);
+    }
+    V.kupon_promo = JSON.stringify(kuponList);
+    tandai();
+    gambarKupon();
+    toast('Kupon berhasil disimpan.', 'ok');
+  }
+
   function panelKontak() {
     return `<div class="card card-p"><div class="row c2">${inp('email_admin', 'Email Kontak Publik &amp; Notifikasi')}${inp('whatsapp', 'Nomor WhatsApp', { ph: '+62 812-3456-7890' })}</div>
       <div class="row c2">${inp('jam_layanan', 'Jam Layanan')}${inp('kota', 'Kota')}</div>${inp('url_situs', 'Alamat Situs GitHub Pages', { mono: true, maks: 300, ph: 'https://username.github.io/katalog-aplikasi-web/' })}
@@ -337,8 +473,13 @@ async function admPengaturan(c) {
   }
   function gambarPanel() {
     $('#tabs', el).innerHTML = TABS.map((t) => `<button class="${AdmP.tab === t[0] ? 'on' : ''}" data-ptab="${t[0]}">${icon(t[2])} ${t[1]}</button>`).join('');
-    $('#panel').innerHTML = ({ rekening: panelRekening, kontak: panelKontak, halaman: panelHalaman, faq: panelFaq, email: panelEmail, integrasi: panelIntegrasi })[AdmP.tab]();
+    $('#panel').innerHTML = ({ rekening: panelRekening, kupon: panelKupon, kontak: panelKontak, halaman: panelHalaman, faq: panelFaq, email: panelEmail, integrasi: panelIntegrasi })[AdmP.tab]();
     $$('#panel input,#panel textarea,#panel select', el).forEach((i) => i.addEventListener('input', () => { simpanField(i); tandai(); }));
+    if (AdmP.tab === 'kupon') {
+      gambarKupon();
+      const addBtn = $('#addkupon');
+      if (addBtn) addBtn.addEventListener('click', () => modalKupon());
+    }
     if (AdmP.tab === 'faq') { gambarFaq(); $('#addfaq').addEventListener('click', () => { faq.push({ kategori: 'Umum', pertanyaan: '', jawaban: '' }); gambarFaq(); tandai(); }); }
     if (AdmP.tab === 'email') ikatEmail();
     if (AdmP.tab === 'integrasi') { const b = $('#ubahsandi'); if (b) b.addEventListener('click', gantiSandiModal); }
@@ -366,6 +507,32 @@ async function admPengaturan(c) {
   }
   gambarPanel();
   on(el, 'click', '[data-ptab]', (e, t) => { AdmP.tab = t.dataset.ptab; gambarPanel(); });
+  on(el, 'change', '[data-tgl-kupon]', (e, t) => {
+    const idx = +t.dataset.tglKupon;
+    if (kuponList[idx]) {
+      kuponList[idx].aktif = t.checked;
+      V.kupon_promo = JSON.stringify(kuponList);
+      tandai();
+      gambarKupon();
+      toast(t.checked ? 'Kupon diaktifkan.' : 'Kupon dinonaktifkan.', 'info');
+    }
+  });
+  on(el, 'click', '[data-edit-kupon]', (e, t) => {
+    const idx = +t.dataset.editKupon;
+    if (kuponList[idx]) modalKupon(kuponList[idx], idx);
+  });
+  on(el, 'click', '[data-rm-kupon]', async (e, t) => {
+    const idx = +t.dataset.rmKupon;
+    const item = kuponList[idx];
+    if (!item) return;
+    const ok = await konfirmasi('Hapus kupon ini?', 'Kupon <b>' + esc(item.kode) + '</b> akan dihapus.', { ok: 'Ya, Hapus', bahaya: true });
+    if (!ok) return;
+    kuponList.splice(idx, 1);
+    V.kupon_promo = JSON.stringify(kuponList);
+    tandai();
+    gambarKupon();
+    toast('Kupon dihapus.', 'ok');
+  });
   on(el, 'input', '[data-faq-k]', (e, t) => { faq[+t.dataset.faqK].kategori = t.value; });
   on(el, 'input', '[data-faq-q]', (e, t) => { faq[+t.dataset.faqQ].pertanyaan = t.value; });
   on(el, 'input', '[data-faq-a]', (e, t) => { faq[+t.dataset.faqA].jawaban = t.value; });

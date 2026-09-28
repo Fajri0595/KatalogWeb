@@ -677,8 +677,142 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
 @media (max-width: 767px) { .buy-bar { display: flex; } }
 @media (min-width: 768px) { .buy-bar { display: none !important; } }
 
+/* ---------- WhatsApp & Kupon Promo ---------- */
+.ic.ic-wa { fill: currentColor; stroke: none; }
+.btn-wa { background: #16A34A; color: #fff !important; box-shadow: 0 1px 3px rgba(22, 163, 74, 0.25); }
+.btn-wa:hover { background: #15803D; box-shadow: 0 4px 14px rgba(22, 163, 74, 0.35); transform: translateY(-1px); }
+.btn-wa-outline { background: #fff; color: #16A34A !important; border-color: #BBF7D0; }
+.btn-wa-outline:hover { background: #F0FDF4; border-color: #86EFAC; color: #15803D !important; box-shadow: var(--sh-1); }
+
+.wa-float {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 999;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 48px;
+  padding: 0 20px 0 16px;
+  background: #22C55E;
+  color: #fff !important;
+  border-radius: 9999px;
+  box-shadow: 0 6px 20px -2px rgba(34, 197, 94, 0.45), 0 2px 6px rgba(15, 23, 42, 0.12);
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none !important;
+  transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
+}
+.wa-float:hover {
+  background: #16A34A;
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 10px 28px -4px rgba(22, 163, 74, 0.55), 0 4px 10px rgba(15, 23, 42, 0.16);
+  text-decoration: none !important;
+}
+.wa-float-icon {
+  font-size: 22px;
+  width: 22px;
+  height: 22px;
+}
+.wa-float-pulse {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  pointer-events: none;
+  animation: waFloatPulse 2.2s infinite ease-out;
+}
+@keyframes waFloatPulse {
+  0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6); }
+  70% { box-shadow: 0 0 0 14px rgba(34, 197, 94, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+}
+
+/* Kupon Promo Checkout */
+.coupon-box {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line-2);
+}
+.coupon-input-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.coupon-applied {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  background: var(--ok-bg);
+  border: 1px solid var(--ok-line);
+  border-radius: var(--r);
+  padding: 10px 14px;
+}
+.coupon-applied-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.coupon-err {
+  color: var(--err-t);
+  font-size: 12px;
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.sumrow.discount {
+  color: var(--ok-t);
+  font-weight: 600;
+}
+
+/* Kupon Admin Panel */
+.kupon-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.kupon-card:hover {
+  border-color: var(--line-2);
+  box-shadow: var(--sh-1);
+}
+.kupon-code {
+  font-family: var(--mono);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  color: var(--indigo);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+@media (max-width: 767px) {
+  .wa-float {
+    bottom: 20px;
+    right: 16px;
+    height: 44px;
+    padding: 0 16px 0 12px;
+    font-size: 13px;
+  }
+  body.has-buybar .wa-float {
+    bottom: 84px;
+  }
+  .kupon-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+}
+
 @media print {
   body { background: #fff; }
-  .nav, .footer, .toolbar-r, .toasts, .buy-bar, .no-print { display: none !important; }
+  .nav, .footer, .toolbar-r, .toasts, .buy-bar, .no-print, .wa-float { display: none !important; }
   .receipt { box-shadow: none; border: 0; margin: 0; max-width: none; padding: 0; }
 }

@@ -32,6 +32,7 @@ function layoutAdmin(aktif, judul) {
   $('#sb-email').textContent = 'Masuk sebagai: ' + Sesi.email();
   $$('.sb nav a').forEach((a) => a.classList.toggle('active', a.dataset.k === aktif));
   $('#crumb').textContent = judul || 'Panel Kontrol';
+  const waf = $('#wa-float'); if (waf) waf.classList.add('hide');
   perbaruiBadge();
 }
 function perbaruiBadge() {
@@ -87,6 +88,7 @@ async function pgAdmin(c) {
 
 // ---------- Login ----------
 function renderMasuk(c) {
+  const waf = $('#wa-float'); if (waf) waf.classList.add('hide');
   const root = $('#root'); root.dataset.layout = 'masuk';
   document.title = 'Masuk Admin — ' + (S.pengaturan.nama_toko || APP_CONFIG.NAMA_DEFAULT);
   root.innerHTML = `<div class="login-wrap"><div style="width:100%;max-width:440px">
@@ -246,7 +248,7 @@ async function admPesanan(c) {
       <div class="verify"><div style="min-width:0;display:flex;flex-direction:column;gap:16px">
         <div class="row c3" style="background:var(--alt);padding:14px;border-radius:12px"><div><div class="lbl-mono">Kode Pesanan</div><div class="mono" style="font-weight:600;margin-top:2px">${esc(o.kode)} <button class="btn btn-ghost btn-sm btn-icon" data-salin="${esc(o.kode)}" aria-label="Salin">${icon('copy')}</button></div></div><div><div class="lbl-mono">Waktu Unggah</div><div style="margin-top:2px;font-weight:500">${esc(tgl(o.bukti.tanggal || o.tanggal, true))}</div></div><div><div class="lbl-mono">Kanal Bayar</div><div style="margin-top:2px;font-weight:500;color:var(--indigo)">Manual Transfer</div></div></div>
         <div class="cust"><div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;flex-wrap:wrap"><div><b class="h-sm">${esc(o.nama)}</b><div class="muted t-sm" style="margin-top:2px">${icon('mail')} ${esc(o.email)}${o.wa ? ' • ' + icon('message-circle') + ' ' + esc(o.wa) : ''}</div></div>${wa}</div>
-          <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid var(--line-2)"><div style="display:flex;gap:10px;align-items:center;min-width:0"><span class="avatar" style="border-radius:8px">${icon('package')}</span><div style="min-width:0"><b class="t-sm">${esc(o.aplikasi)}</b><div class="hint mono">v${esc(o.versi)}</div></div></div><div style="text-align:right"><div class="mono" style="font-size:20px;font-weight:600">${rupiah(o.jumlah)}</div><div class="hint">Nominal pesanan</div></div></div></div>
+          <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid var(--line-2)"><div style="display:flex;gap:10px;align-items:center;min-width:0"><span class="avatar" style="border-radius:8px">${icon('package')}</span><div style="min-width:0"><b class="t-sm">${esc(o.aplikasi)}</b><div class="hint mono">v${esc(o.versi)}</div></div></div><div style="text-align:right"><div class="mono" style="font-size:20px;font-weight:600">${rupiah(o.jumlah)}</div>${o.kode_kupon || o.diskon ? `<span class="pill pill-ok nodot" style="height:18px;font-size:10px;padding:0 6px">${icon('tag')} Kupon: ${esc(o.kode_kupon || 'Promo')} (-${rupiah(o.diskon)})</span>` : '<div class="hint">Nominal pesanan</div>'}</div></div></div>
         <div><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap"><span class="lbl-mono">Bukti Transfer (unggahan pembeli)</span><span class="vtools"><button class="btn btn-secondary btn-sm" id="zoom">${icon('zoom-in')} Toggle Zoom</button><a class="btn btn-secondary btn-sm hide" id="penuh" target="_blank" rel="noopener noreferrer">${icon('maximize')} Buka Penuh</a></span></div>
           <div class="viewer" id="viewer"><span class="muted" style="color:#94A3B8">${icon('refresh', 'spin')} Memuat bukti...</span></div>
           <div class="hint mono" style="margin-top:6px">${esc(o.bukti.nama)} • ${ukuranBerkas(o.bukti.ukuran)}${o.bukti.sebelumnya ? ' • ulang (sebelumnya: ' + esc(o.bukti.sebelumnya) + ')' : ''}</div></div></div>
