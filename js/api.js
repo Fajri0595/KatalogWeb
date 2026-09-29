@@ -30,7 +30,13 @@ const API = {
       throw new ApiError(e.name === 'AbortError' ? 'Server terlalu lama menjawab. Coba lagi.' : 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.', 'JARINGAN');
     } finally { clearTimeout(t); }
     let json;
-    try { json = await res.json(); } catch (e) { throw new ApiError('Respons server tidak valid. Pastikan Web App di-deploy dengan akses "Anyone".', 'RESPONS'); }
+    try { json = await res.json(); }
+    catch (e) {
+      if (res.status === 404) {
+        throw new ApiError('URL Web App tidak ditemukan (HTTP 404). Pastikan URL di js/config.js adalah URL Deployment (/exec), bukan Script ID.', 'NOT_FOUND');
+      }
+      throw new ApiError('Respons server tidak valid' + (res.status ? ' (' + res.status + ')' : '') + '. Pastikan Web App di-deploy dengan akses "Anyone".', 'RESPONS');
+    }
     if (!json.success) {
       if (json.code === 'AUTH') { Sesi.hapus(); if (location.hash.indexOf('#/admin') === 0 && location.hash !== '#/admin') { toast('Sesi admin berakhir. Silakan masuk lagi.', 'warn'); location.hash = '#/admin'; } }
       throw new ApiError(json.message || 'Permintaan gagal.', json.code, json);

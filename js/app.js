@@ -36,6 +36,7 @@ function cocokRute(path) {
 function bersihkanCachePublik() {
   try { localStorage.setItem('kaw_last_update', String(Date.now())); } catch (e) {}
   ss('kaw_boot', null);
+  ls('kaw_boot', null);
   S.siap = false;
   S.detail = {};
   S.faq = null;
@@ -44,10 +45,10 @@ function bersihkanCachePublik() {
 async function muatBootstrap() {
   let lastUpdate = '0';
   try { lastUpdate = localStorage.getItem('kaw_last_update') || '0'; } catch (e) {}
-  const c = ss('kaw_boot');
+  // Stale-While-Revalidate via localStorage: jika ada data tersimpan di browser, langsung pakai seketika (0ms delay)
+  const c = ls('kaw_boot') || ss('kaw_boot');
   if (S.siap && c && c.u === lastUpdate) return;
-  // Stale-While-Revalidate: jika ada data tersimpan, langsung pakai seketika (0ms delay)
-  if (c && c.u === lastUpdate && c.d) {
+  if (c && c.d && Array.isArray(c.d.aplikasi) && c.d.aplikasi.length > 0) {
     S.pengaturan = c.d.pengaturan || {};
     if (!S.pengaturan.whatsapp || /0000-0000|1234567890|contoh/i.test(S.pengaturan.whatsapp)) {
       S.pengaturan.whatsapp = (window.APP_CONFIG && APP_CONFIG.WHATSAPP_DEFAULT) || '085655860383';
@@ -55,8 +56,8 @@ async function muatBootstrap() {
     S.apps = c.d.aplikasi || [];
     S.siap = true;
 
-    // Jika cache lebih dari 3 menit, perbarui di latar belakang tanpa menunda UI
-    if (Date.now() - c.t > 3 * 60 * 1000) {
+    // Perbarui data di latar belakang tanpa menunda tampilan UI jika data lebih dari 2 menit
+    if (Date.now() - (c.t || 0) > 2 * 60 * 1000) {
       API.get('getBootstrap').then(d => {
         if (!d) return;
         S.pengaturan = Object.assign({}, S.pengaturan, d.pengaturan || {});
@@ -64,7 +65,9 @@ async function muatBootstrap() {
           S.pengaturan.whatsapp = (window.APP_CONFIG && APP_CONFIG.WHATSAPP_DEFAULT) || '085655860383';
         }
         S.apps = d.aplikasi || [];
-        ss('kaw_boot', { t: Date.now(), u: lastUpdate, d });
+        const paket = { t: Date.now(), u: lastUpdate, d };
+        ss('kaw_boot', paket);
+        ls('kaw_boot', paket);
       }).catch(() => {});
     }
     return;
@@ -76,7 +79,9 @@ async function muatBootstrap() {
   }
   S.apps = d.aplikasi || [];
   S.siap = true;
-  ss('kaw_boot', { t: Date.now(), u: lastUpdate, d });
+  const paket = { t: Date.now(), u: lastUpdate, d };
+  ss('kaw_boot', paket);
+  ls('kaw_boot', paket);
 }
 
 function praMuatPublik() {
