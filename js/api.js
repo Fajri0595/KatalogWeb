@@ -62,16 +62,10 @@ const API = {
           sb.from('pengaturan').select('*')
         ]);
 
-        const pengaturan = {
-          nama_toko: (window.APP_CONFIG && APP_CONFIG.NAMA_DEFAULT) || 'Katalog Aplikasi Web',
-          whatsapp: (window.APP_CONFIG && APP_CONFIG.WHATSAPP_DEFAULT) || '085655860383',
-          hero_judul: 'Aplikasi Web Siap Pakai untuk Kebutuhan Anda',
-          hero_subjudul: 'Koleksi aplikasi web berkualitas karya developer independen. Sumber kode penuh dan verifikasi pesanan terpercaya.'
-        };
-
+        const pengaturan = {};
         if (setRes && setRes.data) {
           setRes.data.forEach(row => {
-            if (row.kunci && row.nilai) pengaturan[row.kunci] = row.nilai;
+            if (row.kunci) pengaturan[row.kunci] = row.nilai;
           });
         }
 
@@ -83,13 +77,7 @@ const API = {
         return { aplikasi, pengaturan };
       } catch (err) {
         console.error('getBootstrap error:', err);
-        return {
-          aplikasi: [],
-          pengaturan: {
-            nama_toko: (window.APP_CONFIG && APP_CONFIG.NAMA_DEFAULT) || 'Katalog Aplikasi Web',
-            whatsapp: (window.APP_CONFIG && APP_CONFIG.WHATSAPP_DEFAULT) || '085655860383'
-          }
-        };
+        return { aplikasi: [], pengaturan: {} };
       }
     }
 
@@ -231,24 +219,13 @@ const API = {
       }
     }
 
-    // 3. ADMIN SETTINGS (PENGATURAN SISTEM)
+    // 3. ADMIN SETTINGS (PENGATURAN SISTEM MURNI DARI DATABASE)
     if (action === 'adminGetSettings') {
       try {
         const { data: setRows } = await sb.from('pengaturan').select('*');
-        const nilai = {
-          nama_toko: (window.APP_CONFIG && APP_CONFIG.NAMA_DEFAULT) || 'Katalog Aplikasi Web',
-          whatsapp: (window.APP_CONFIG && APP_CONFIG.WHATSAPP_DEFAULT) || '085655860383',
-          bank_nama: 'Bank Central Asia (BCA)',
-          bank_nomor: '0000 0000 00',
-          bank_atas_nama: 'NAMA PEMILIK REKENING',
-          jam_layanan: '08.00 - 20.00 WIB (Senin s.d. Sabtu)',
-          kota: 'Jakarta, Indonesia',
-          sla_verifikasi: '1x24 jam',
-          hero_judul: 'Aplikasi Web Siap Pakai untuk Kebutuhan Anda'
-        };
-
+        const nilai = {};
         if (setRows) {
-          setRows.forEach(r => { if (r.kunci && r.nilai) nilai[r.kunci] = r.nilai; });
+          setRows.forEach(r => { if (r.kunci) nilai[r.kunci] = r.nilai; });
         }
 
         return {
@@ -274,11 +251,13 @@ const API = {
     if (action === 'adminSaveSettings') {
       try {
         const nilai = data.nilai || {};
-        const entries = Object.keys(nilai).map(k => ({ kunci: k, nilai: String(nilai[k]) }));
-        for (const item of entries) {
-          await sb.from('pengaturan').upsert(item, { onConflict: 'kunci' });
+        const keys = Object.keys(nilai);
+        for (const k of keys) {
+          const val = nilai[k] === null || nilai[k] === undefined ? '' : String(nilai[k]);
+          const { error: upErr } = await sb.from('pengaturan').upsert({ kunci: k, nilai: val });
+          if (upErr) throw new ApiError(upErr.message, 'SAVE_ERROR');
         }
-        return { pesan: 'Pengaturan berhasil disimpan.', diubah: entries.length };
+        return { pesan: 'Pengaturan berhasil disimpan.', diubah: keys.length };
       } catch (err) {
         throw new ApiError(err.message || 'Gagal menyimpan pengaturan.', 'SETTINGS_ERROR');
       }
