@@ -50,12 +50,11 @@ const API = {
 
   async get(action, params) {
     if (!this.siap()) {
-      throw new ApiError('Supabase belum dikonfigurasi. Buka js/config.js dan masukkan SUPABASE_URL serta ANON_KEY.', 'CONFIG');
+      throw new ApiError('Supabase belum dikonfigurasi. Buka js/config.js.', 'CONFIG');
     }
     const sb = getSupabase();
-    if (!sb) throw new ApiError('Supabase JS SDK gagal dimuat. Periksa koneksi internet Anda.', 'JARINGAN');
+    if (!sb) throw new ApiError('Supabase JS SDK gagal dimuat.', 'JARINGAN');
 
-    // Handler Query Cepat Langsung ke Supabase
     if (action === 'getBootstrap') {
       try {
         const [appRes, setRes] = await Promise.all([
@@ -81,10 +80,7 @@ const API = {
           status: a.status || (a.is_aktif ? 'Tersedia' : 'Segera Hadir')
         }));
 
-        return {
-          aplikasi: aplikasi,
-          pengaturan: pengaturan
-        };
+        return { aplikasi, pengaturan };
       } catch (err) {
         console.error('getBootstrap error:', err);
         return {
@@ -124,17 +120,130 @@ const API = {
       return hasil;
     }
 
-    // Default Fallback kirim ke Serverless Function Vercel
     return this._kirimApi(`/api/${action}`, 'GET', params);
   },
 
   async post(action, data) {
     if (!this.siap()) {
-      throw new ApiError('Supabase belum dikonfigurasi. Buka js/config.js.', 'CONFIG');
+      throw new ApiError('Supabase belum dikonfigurasi.', 'CONFIG');
     }
     const sb = getSupabase();
 
-    // Logika upload bukti pembayaran ke Supabase Storage
+    // 1. AUTENTIKASI ADMIN VIA SUPABASE AUTH
+    if (action === 'adminLogin') {
+      try {
+        const { data: authData, error: authError } = await sb.auth.signInWithPassword({
+          email: data.email,
+          password: data.sandi || data.password
+        });
+
+        if (authError) {
+          throw new ApiError(authError.message || 'Email atau kata sandi admin salah.', 'AUTH');
+        }
+
+        const token = authData.session ? authData.session.access_token : 'admin_token_' + Date.now();
+        return {
+          token: token,
+          email: authData.user ? authData.user.email : data.email
+        };
+      } catch (err) {
+        throw new ApiError(err.message || 'Otentikasi gagal.', 'AUTH');
+      }
+    }
+
+    if (action === 'adminLogout') {
+      try { await sb.auth.signOut(); } catch (e) {}
+      Sesi.hapus();
+      return { success: true };
+    }
+
+    // 2. ADMIN DASHBOARD & ORDERS
+    if (action === 'adminGetDashboard') {
+      try {
+        const [ordersRes, appsRes] = await Promise.all([
+          sb.from('pesanan').select('*').order('tanggal', { ascending: false }),
+          sb.from('aplikasi').select('*')
+        ]);
+        const orders = ordersRes.data || [];
+        const apps = appsRes.data || [];
+
+        let omset = 0;
+        let pending = 0;
+        let disetujui = 0;
+        let ditolak = 0;
+
+        orders.forEach(o => {
+          if (o.status === 'Disetujui' || o.status === 'Lunas') {
+            omset += Number(o.total_harga || 0);
+            disetujui++;
+          } else if (o.status === 'Ditolak') {
+            ditolak++;
+          } else {
+            pending++;
+          }
+        });
+
+        return {
+          ringkas: {
+            omset: omset,
+            total_pesanan: orders.length,
+            menunggu: pending,
+            total_produk: apps.length,
+            delta_persen: null
+          },
+          status: { 'Menunggu Verifikasi': pending, 'Disetujui': disetujui, 'Ditolak': ditolak },
+          deret: [],
+          rentang: { mulai: new Date(Date.now() - 30*86400000).toISOString(), akhir: new Date().toISOString() }
+        };
+      } catch (e) {
+        throw new ApiError(e.message, 'DASHBOARD_ERROR');
+      }
+    }
+
+    if (action === 'adminGetOrders') {
+      const { data: orders, error } = await sb.from('pesanan').select('*, aplikasi(nama)').order('tanggal', { ascending: false });
+      if (error) throw new ApiError(error.message, 'DB_ERROR');
+      return (orders || []).map(o => ({
+        kode: o.id,
+        nama: o.nama_pemesan,
+        email: o.email,
+        wa: o.whatsapp,
+        jumlah: o.total_harga,
+        status: o.status === 'MENUNGGU' ? 'Menunggu Verifikasi' : o.status,
+        tanggal: o.tanggal,
+        aplikasi: (o.aplikasi && o.aplikasi.nama) || o.aplikasi_id || 'Aplikasi Web',
+        bukti: o.bukti_transfer_url ? { id: o.id, url: o.bukti_transfer_url } : null,
+        catatan: o.catatan || ''
+      }));
+    }
+
+    if (action === 'adminGetApps') {
+      const { data: apps, error } = await sb.from('aplikasi').select('*').order('created_at', { ascending: false });
+      if (error) throw new ApiError(error.message, 'DB_ERROR');
+      return apps || [];
+    }
+
+    if (action === 'adminGetSettings') {
+      const { data, error } = await sb.from('pengaturan').select('*');
+      if (error) throw new ApiError(error.message, 'DB_ERROR');
+      const res = {};
+      (data || []).forEach(r => { res[r.kunci] = { value: r.nilai }; });
+      return res;
+    }
+
+    if (action === 'adminGetFaq') {
+      const { data, error } = await sb.from('faq').select('*').order('urutan', { ascending: true });
+      if (error) throw new ApiError(error.message, 'DB_ERROR');
+      return data || [];
+    }
+
+    if (action === 'adminGetTestimonials') {
+      const { data, error } = await sb.from('testimoni').select('*').order('created_at', { ascending: false });
+      if (error) throw new ApiError(error.message, 'DB_ERROR');
+      return data || [];
+    }
+
+    // 3. CHECKOUT & ORDERS PUBLIK
     if (action === 'createOrder') {
       try {
         let buktiUrl = '';
@@ -167,7 +276,7 @@ const API = {
           whatsapp: data.whatsapp || data.wa,
           aplikasi_id: data.id_aplikasi || data.aplikasi_id,
           total_harga: data.total || data.harga,
-          status: 'MENUNGGU',
+          status: 'Menunggu Verifikasi',
           bukti_transfer_url: buktiUrl,
           catatan: data.catatan || ''
         };
@@ -175,7 +284,6 @@ const API = {
         const { error: insErr } = await sb.from('pesanan').insert([payloadPesanan]);
         if (insErr) throw new ApiError(insErr.message, 'ORDER_ERROR');
 
-        // Picu notifikasi / email resi lewat Vercel Serverless (async)
         fetch('/api/notify-order', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -214,7 +322,6 @@ const API = {
       return { success: true };
     }
 
-    // Aksi admin atau lainnya diarahkan ke Vercel Serverless
     return this._kirimApi(`/api/${action}`, 'POST', data);
   },
 
