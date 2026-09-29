@@ -256,9 +256,12 @@ const API = {
           keterangan: {},
           template_bawaan: {},
           integrasi: {
-            kuota_email_sisa: 100,
-            spreadsheet_url: '#',
-            folder: [],
+            kuota_email_sisa: 'Unlimited (Vercel API)',
+            spreadsheet_url: 'https://supabase.com/dashboard/project/ekqvovptxizwuawtkybe',
+            folder: [
+              { nama: 'Storage Bucket (media)', url: 'https://supabase.com/dashboard/project/ekqvovptxizwuawtkybe/storage/buckets/media' },
+              { nama: 'Vercel Deployment', url: 'https://vercel.com/dashboard' }
+            ],
             email_login: Sesi.email() || 'admin@gmail.com'
           }
         };
