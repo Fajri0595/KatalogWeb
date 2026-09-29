@@ -320,7 +320,7 @@ async function admPengaturan(c) {
   el.innerHTML = `<div class="page-h"><div><div class="eyebrow">Konfigurasi</div><h1 class="h-lg" style="margin-top:4px">Pengaturan Toko &amp; Sistem</h1><p>Atur rekening tujuan transfer, kontak developer, FAQ publik, serta template email otomatis.</p></div></div>
     <div class="row c3" style="margin-bottom:24px">
       <div class="card int-card"><span class="iic">${icon('landmark')}</span><div><div class="lbl-mono">Metode Pembayaran</div><b>${esc(V.bank_nama)}</b></div></div>
-      <div class="card int-card"><span class="iic">${icon('cloud')}</span><div><div class="lbl-mono">Infrastruktur Database</div><b style="color:var(--ok-t)">Supabase PostgreSQL Active</b></div></div>
+      <div class="card int-card"><span class="iic">${icon('mail')}</span><div><div class="lbl-mono">Kuota Email Harian</div><b>${d.integrasi.kuota_email_sisa === null ? '-' : d.integrasi.kuota_email_sisa + ' tersisa'}</b></div></div>
       <div class="card int-card"><span class="iic">${icon('database')}</span><div><div class="lbl-mono">Login Admin</div><b class="mono t-sm">${esc(d.integrasi.email_login || '-')}</b></div></div></div>
     <div class="tabs" id="tabs"></div>
     <div id="panel" style="padding-top:20px"></div>
@@ -501,42 +501,11 @@ async function admPengaturan(c) {
       <div><div class="lbl-mono" style="margin-bottom:8px">Pratinjau Nyata (Live Preview)</div><div class="mailprev"><div class="mh"><div>Dari: <b>${esc(V.nama_toko)}</b></div><div>Kepada: <b>nama@email.com</b></div><div>Subjek: <b id="pv-subj"></b></div></div><div class="mb" id="pv-body"></div></div></div></div>`;
   }
   function panelIntegrasi() {
-    return <div class="row c2">
-      <div class="card card-p">
-        <div class="sec-title" style="margin-bottom:12px"> Database &amp; Storage (Supabase)</div>
-        <p class="muted t-sm" style="margin-bottom:14px">Arsitektur data modern berbasis PostgreSQL dengan query instan tanpa batas baris spreadsheet.</p>
-        <div class="kv"><span>Region Database</span><span class="mono">Singapore (ap-southeast-1)</span></div>
-        <div class="kv"><span>Storage Bucket</span><span class="mono">media (Public CDN)</span></div>
-        <div class="kv"><span>Status Koneksi</span><span class="pill pill-ok nodot">Terhubung &amp; Aktif</span></div>
-        <div style="margin-top:14px">
-          <a class="btn btn-secondary btn-block" href="https://supabase.com/dashboard/project/ekqvovptxizwuawtkybe" target="_blank" rel="noopener noreferrer"> Buka Dashboard Supabase</a>
-        </div>
-      </div>
-
-      <div class="card card-p">
-        <div class="sec-title" style="margin-bottom:12px"> Hosting &amp; Serverless (Vercel)</div>
-        <p class="muted t-sm" style="margin-bottom:14px">Frontend disajikan melalui Edge Network Global Vercel dengan otomatisasi API Serverless tanpa beban server manual.</p>
-        <div class="kv"><span>Deployment Target</span><span class="mono">Vercel Production</span></div>
-        <div class="kv"><span>Notifikasi Pesanan</span><span class="mono">Vercel API (/api/notify-order)</span></div>
-        <div class="kv"><span>Limitasi Kuota GAS</span><span class="mono" style="color:var(--ok-t)">Bebas Limit 100/hari</span></div>
-        <div style="margin-top:14px">
-          <a class="btn btn-secondary btn-block" href="https://vercel.com/dashboard" target="_blank" rel="noopener noreferrer"> Buka Dashboard Vercel</a>
-        </div>
-      </div>
-
-      <div class="card card-p">
-        <div class="sec-title" style="margin-bottom:12px"> Akun &amp; Keamanan Admin</div>
-        <div class="kv"><span>Email Login Terdaftar</span><span class="mono"></span></div>
-        <div class="kv"><span>Metode Autentikasi</span><span class="mono">Supabase Auth (JWT Token)</span></div>
-        <p class="muted t-sm" style="margin-top:12px">Pengelolaan akun dan kata sandi admin kini dikelola langsung dan terenkripsi aman di Supabase Auth.</p>
-      </div>
-
-      <div class="card card-p">
-        <div class="sec-title" style="margin-bottom:12px"> Fitur Realtime &amp; Webhook</div>
-        <p class="muted t-sm">Sistem mendukung streaming perubahan status pesanan secara instan melalui PostgreSQL WebSockets.</p>
-        <div class="kv"><span>Status Realtime</span><span class="pill pill-ok nodot">Siap Digunakan</span></div>
-      </div>
-    </div>;
+    return `<div class="row c2">
+      <div class="card card-p"><div class="sec-title" style="margin-bottom:12px">${icon('database')} Google Sheets Database</div><a class="btn btn-secondary btn-block" href="${esc(d.integrasi.spreadsheet_url)}" target="_blank" rel="noopener noreferrer">${icon('external-link')} Buka Spreadsheet</a></div>
+      <div class="card card-p"><div class="sec-title" style="margin-bottom:12px">${icon('folder')} Folder Google Drive</div><div style="display:flex;flex-direction:column;gap:8px">${d.integrasi.folder.map((f) => `<a class="btn btn-secondary btn-sm" style="justify-content:flex-start" href="${esc(f.url)}" target="_blank" rel="noopener noreferrer">${icon('external-link')} ${esc(f.nama)}</a>`).join('')}</div></div>
+      <div class="card card-p"><div class="sec-title" style="margin-bottom:12px">${icon('mail')} Kuota &amp; Pengiriman</div><div class="kv"><span>Sisa kuota email hari ini</span><span>${d.integrasi.kuota_email_sisa === null ? '-' : d.integrasi.kuota_email_sisa}</span></div><div class="kv"><span>Email login admin</span><span class="mono">${esc(d.integrasi.email_login || '-')}</span></div></div>
+      <div class="card card-p"><div class="sec-title" style="margin-bottom:12px">${icon('key')} Kata Sandi Admin</div><button class="btn btn-secondary btn-block" id="ubahsandi">${icon('lock')} Ubah Kata Sandi</button></div></div>`;
   }
   function gambarPanel(hanyaPanel) {
     if (!hanyaPanel) {
