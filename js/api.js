@@ -59,23 +59,41 @@ const API = {
     if (action === 'getBootstrap') {
       try {
         const [appRes, setRes] = await Promise.all([
-          sb.from('aplikasi').select('*').eq('is_aktif', true).order('created_at', { ascending: false }),
+          sb.from('aplikasi').select('*').order('created_at', { ascending: false }),
           sb.from('pengaturan').select('*')
         ]);
 
-        if (appRes.error) throw new ApiError(appRes.error.message, 'DB_ERROR');
+        const pengaturan = {
+          nama_toko: (window.APP_CONFIG && APP_CONFIG.NAMA_DEFAULT) || 'Katalog Aplikasi Web',
+          whatsapp: (window.APP_CONFIG && APP_CONFIG.WHATSAPP_DEFAULT) || '085655860383',
+          hero_judul: 'Aplikasi Web Siap Pakai untuk Kebutuhan Anda',
+          hero_subjudul: 'Koleksi aplikasi web berkualitas karya developer independen. Sumber kode penuh dan verifikasi pesanan terpercaya.'
+        };
 
-        const pengaturan = {};
-        (setRes.data || []).forEach(row => {
-          pengaturan[row.kunci] = row.nilai;
-        });
+        if (setRes && setRes.data) {
+          setRes.data.forEach(row => {
+            if (row.kunci && row.nilai) pengaturan[row.kunci] = row.nilai;
+          });
+        }
+
+        const rawApps = (appRes && appRes.data) ? appRes.data : [];
+        const aplikasi = rawApps.map(a => Object.assign({}, a, {
+          status: a.status || (a.is_aktif ? 'Tersedia' : 'Segera Hadir')
+        }));
 
         return {
-          aplikasi: appRes.data || [],
+          aplikasi: aplikasi,
           pengaturan: pengaturan
         };
       } catch (err) {
-        throw new ApiError(err.message || 'Gagal memuat data.', 'DB_ERROR');
+        console.error('getBootstrap error:', err);
+        return {
+          aplikasi: [],
+          pengaturan: {
+            nama_toko: (window.APP_CONFIG && APP_CONFIG.NAMA_DEFAULT) || 'Katalog Aplikasi Web',
+            whatsapp: (window.APP_CONFIG && APP_CONFIG.WHATSAPP_DEFAULT) || '085655860383'
+          }
+        };
       }
     }
 
