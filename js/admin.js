@@ -21,8 +21,8 @@ function layoutAdmin(aktif, judul) {
         <nav>${NAV_ADMIN.map((n) => `<a href="${n.h}" data-k="${n.k}">${icon(n.i)}<span>${n.t}</span>${n.badge ? `<span class="badge-n hide" data-badge="${n.badge}">0</span>` : ''}</a>`).join('')}</nav>
         <div class="sb-foot"><a href="#/">${icon('arrow-left')} Kembali ke Publik</a><button id="keluar">${icon('log-out')} Keluar</button><small id="sb-email"></small></div></aside>
       <div class="adm-main"><header class="topbar"><button class="btn btn-ghost btn-icon tools-btn" id="sb-tog" aria-label="Menu">${icon('menu')}</button>
-        <div class="crumbs">Area Kerja ${icon('chevron-right')} <b id="crumb">Panel Kontrol</b></div>
-        <div class="sp"><a class="btn btn-secondary btn-sm" href="#/" target="_blank" rel="noopener noreferrer">${icon('external-link')} Pratinjau Toko</a><span class="avatar-a" title="Admin">${icon('user')}</span></div></header>
+        <div class="crumbs"><span class="crumb-root">Area Kerja ${icon('chevron-right')} </span><b id="crumb">Panel Kontrol</b></div>
+        <div class="sp"><a class="btn btn-secondary btn-sm" href="#/" target="_blank" rel="noopener noreferrer" title="Pratinjau Toko">${icon('external-link')} <span class="tb-txt">Pratinjau Toko</span></a><span class="avatar-a" title="Admin">${icon('user')}</span></div></header>
         <div class="adm-in" id="adm-main"></div></div></div>`;
     $('#sb-tog').addEventListener('click', () => $('#adm').classList.toggle('open'));
     $('#sb').addEventListener('click', (e) => { if (e.target.closest('a')) $('#adm').classList.remove('open'); });

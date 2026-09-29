@@ -14,7 +14,7 @@ async function admAplikasi(c) {
   const kats = ['Semua'].concat(Array.from(new Set(apps.map((a) => a.kategori))));
   el.innerHTML = `<div class="page-h"><div><div class="eyebrow">Manajemen Produk</div><h1 class="h-lg" style="margin-top:4px">Daftar &amp; Kelola Aplikasi Web</h1><p>Atur etalase aplikasi, visibilitas status penjualan, pembaruan versi, dan konfigurasi harga produk.</p></div>
       <div class="acts"><button class="btn btn-secondary" id="segar">${icon('refresh')} Sinkronkan</button><a class="btn btn-primary" href="#/admin/aplikasi/baru">${icon('plus')} Tambah Aplikasi Baru</a></div></div>
-    <div class="stats stats-c3" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+    <div class="stats c3">
       <div class="card stat"><div class="lbl-mono">Total Aplikasi Terdaftar</div><div class="sv">${apps.length}<small>katalog</small></div></div>
       <div class="card stat"><div class="lbl-mono">Rata-rata Nilai Lisensi</div><div class="sv" style="font-size:24px">${rupiah(apps.length ? apps.reduce((s, a) => s + a.harga, 0) / apps.length : 0)}</div></div>
       <div class="card stat"><div class="lbl-mono">Total Terjual (Disetujui)</div><div class="sv">${apps.reduce((s, a) => s + a.jumlah_pesanan, 0)}<small>lisensi</small></div></div></div>
@@ -222,7 +222,7 @@ async function admTestimoni(c) {
   const tes = await muatTestimoni(false);
   if (c.batal()) return;
   el.innerHTML = `<div class="page-h"><div><div class="eyebrow">Moderasi Ulasan</div><h1 class="h-lg" style="margin-top:4px">Moderasi Testimoni &amp; Ulasan Pembeli</h1><p>Tinjau testimoni dari pembeli terverifikasi sebelum dipublikasikan ke halaman etalase publik.</p></div></div>
-    <div class="stats stats-c3" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+    <div class="stats c3">
       <div class="card stat" style="border-left:3px solid var(--warn)"><div class="lbl-mono">Menunggu Moderasi</div><div class="sv">${tes.filter((t) => t.status === 'Menunggu').length}<small>ulasan</small></div></div>
       <div class="card stat" style="border-left:3px solid var(--ok)"><div class="lbl-mono">Disetujui &amp; Tampil</div><div class="sv">${tes.filter((t) => t.status === 'Disetujui').length}<small>publik</small></div></div>
       <div class="card stat" style="border-left:3px solid var(--line-2)"><div class="lbl-mono">Ditolak / Disembunyikan</div><div class="sv">${tes.filter((t) => t.status === 'Ditolak' || t.status === 'Disembunyikan').length}<small>arsip</small></div></div></div>
@@ -322,7 +322,7 @@ async function admPengaturan(c) {
     return `<div class="field"><label for="p_${k}">${label}</label>${opsi.area ? `<textarea class="textarea" id="p_${k}" rows="${opsi.rows || 3}" maxlength="${opsi.maks || 1000}">${esc(V[k] || '')}</textarea>` : `<input class="input ${opsi.mono ? 'mono' : ''}" id="p_${k}" maxlength="${opsi.maks || 200}" placeholder="${esc(opsi.ph || '')}" value="${esc(V[k] || '')}">`}${d.keterangan[k] ? `<div class="hint">${esc(d.keterangan[k])}</div>` : ''}</div>`;
   }
   function panelRekening() {
-    return `<div class="row" style="grid-template-columns:1.3fr 1fr;align-items:start"><div class="card card-p">
+    return `<div class="row row-rekening"><div class="card card-p">
       ${inp('bank_nama', 'Nama Institusi Bank')}<div class="row c2">${inp('bank_nomor', 'Nomor Rekening', { mono: true })}${inp('bank_cabang', 'Kode Bank / Cabang (opsional)')}</div>
       ${inp('bank_atas_nama', 'Nama Pemilik Rekening')}${inp('catatan_transfer', 'Catatan Instruksi Transfer untuk Pembeli', { area: true, maks: 400 })}</div>
       <div class="bank-card"><small>Rekening Penampung Toko</small><div class="bn">${esc(V.bank_nama || '-')}</div><small>Nomor Rekening</small><div class="no">${esc(V.bank_nomor || '-')}</div><small>Atas Nama</small><div class="an">${esc(V.bank_atas_nama || '-')}</div></div></div>`;
@@ -464,7 +464,7 @@ async function admPengaturan(c) {
     $('#faqwrap').innerHTML = faq.length ? faq.map((f, i) => `<div class="faq-edit"><div style="display:flex;gap:8px;align-items:flex-start"><span class="lbl-mono" style="padding-top:10px">${icon('grip')}</span><div style="flex:1;display:grid;gap:8px"><input class="input" placeholder="Kategori" maxlength="80" data-faq-k="${i}" value="${esc(f.kategori)}"><input class="input" placeholder="Pertanyaan" maxlength="300" data-faq-q="${i}" value="${esc(f.pertanyaan)}"><textarea class="textarea" rows="2" placeholder="Jawaban" maxlength="3000" data-faq-a="${i}">${esc(f.jawaban)}</textarea></div><button class="btn btn-ghost btn-sm btn-icon" data-rmfaq="${i}">${icon('trash')}</button></div></div>`).join('') : `<div class="empty" style="padding:24px">Belum ada FAQ.</div>`;
   }
   function panelEmail() {
-    return `<div class="row" style="grid-template-columns:1fr 1fr;align-items:start"><div class="card card-p">
+    return `<div class="row row-email"><div class="card card-p">
       <select class="select" id="tplpilih">${[['1', 'Pesanan Diterima (ke Pembeli)'], ['2', 'Pembayaran Disetujui (ke Pembeli)'], ['3', 'Pembayaran Ditolak (ke Pembeli)'], ['4', 'Notifikasi Pesanan Baru (ke Admin)'], ['5', 'Notifikasi Testimoni Baru (ke Admin)']].map((t) => `<option value="${t[0]}" ${AdmP.tpl === t[0] ? 'selected' : ''}>${t[1]}</option>`).join('')}</select>
       <div class="field" style="margin-top:16px"><label for="tsubj">Subjek Email</label><input class="input" id="tsubj"></div>
       <div class="vars">${TAB_VAR.map((v) => `<button type="button" data-var="{${v}}">{${v}}</button>`).join('')}</div>
