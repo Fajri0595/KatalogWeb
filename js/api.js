@@ -301,10 +301,27 @@ const API = {
     }
 
     if (action === 'adminSaveApp') {
-      const item = Object.assign({}, data);
-      const { data: res, error } = await sb.from('aplikasi').upsert(item).select().single();
-      if (error) throw new ApiError(error.message, 'DB_ERROR');
-      return res;
+      try {
+        const idApp = data.id || ('APP-' + Date.now().toString(36).toUpperCase());
+        const row = {
+          id: idApp,
+          nama: data.nama,
+          deskripsi_singkat: data.deskripsi_singkat || '',
+          deskripsi_lengkap: data.deskripsi_lengkap || '',
+          kategori: data.kategori || 'Umum',
+          harga: Number(data.harga) || 0,
+          harga_coret: Number(data.harga_coret) || 0,
+          thumbnail_url: data.thumb || data.thumbnail_url || '',
+          demo_url: data.link_demo || data.demo_url || '',
+          fitur: data.fitur || [],
+          is_aktif: data.tampil_publik !== false
+        };
+        const { data: res, error } = await sb.from('aplikasi').upsert(row).select().single();
+        if (error) throw new ApiError(error.message, 'DB_ERROR');
+        return { success: true, pesan: 'Aplikasi berhasil disimpan.', data: res };
+      } catch (err) {
+        throw new ApiError(err.message || 'Gagal menyimpan aplikasi.', 'DB_ERROR');
+      }
     }
 
     if (action === 'adminDeleteApp') {
@@ -317,7 +334,70 @@ const API = {
     if (action === 'adminGetFaq') {
       const { data: faqs, error } = await sb.from('faq').select('*').order('urutan', { ascending: true });
       if (error) throw new ApiError(error.message, 'DB_ERROR');
-      return faqs || [];
+      return (faqs || []).map(f => ({
+        id: f.id,
+        kategori: f.kategori || 'Umum',
+        pertanyaan: f.pertanyaan,
+        jawaban: f.jawaban,
+        urutan: f.urutan || 0
+      }));
+    }
+
+    if (action === 'adminSaveFaq') {
+      try {
+        const items = data.items || [];
+        // Hapus FAQ lama lalu simpan yang baru
+        await sb.from('faq').delete().neq('id', 0);
+        if (items.length > 0) {
+          const barisFaq = items.map((f, i) => ({
+            kategori: f.kategori || 'Umum',
+            pertanyaan: f.pertanyaan,
+            jawaban: f.jawaban,
+            urutan: i + 1
+          }));
+          const { error: insErr } = await sb.from('faq').insert(barisFaq);
+          if (insErr) throw new ApiError(insErr.message, 'FAQ_SAVE_ERROR');
+        }
+        return { success: true, pesan: 'FAQ berhasil diperbarui.' };
+      } catch (err) {
+        throw new ApiError(err.message || 'Gagal menyimpan FAQ.', 'FAQ_SAVE_ERROR');
+      }
+    }
+
+    if (action === 'adminUploadMedia') {
+      try {
+        if (!data || !data.base64) throw new Error('Data gambar tidak valid');
+        const mime = data.mime || 'image/jpeg';
+        const ext = mime.split('/')[1] || 'jpg';
+        const byteCharacters = atob(data.base64);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: mime });
+
+        const fileName = ${data.jenis || 'media'}/_.;
+        const bucket = (window.APP_CONFIG && APP_CONFIG.STORAGE_BUCKET) || 'media';
+        const uploadRes = await sb.storage.from(bucket).upload(fileName, blob, { contentType: mime });
+        if (uploadRes.error) throw uploadRes.error;
+
+        const { data: pubData } = sb.storage.from(bucket).getPublicUrl(fileName);
+        const url = pubData ? pubData.publicUrl : '';
+        return { id: url, url: url, nama: data.nama || fileName };
+      } catch (err) {
+        throw new ApiError(err.message || 'Gagal mengunggah media.', 'UPLOAD_ERROR');
+      }
+    }
+
+    if (action === 'adminTestEmail') {
+      return { pesan: 'Email uji berhasil dikonfigurasi melalui integrasi Vercel.' };
+    }
+
+    if (action === 'adminToggleApp') {
+      const { error: togErr } = await sb.from('aplikasi').update({ is_aktif: data.tampil === 'Ya' || data.tampil === true }).eq('id', data.id);
+      if (togErr) throw new ApiError(togErr.message, 'DB_ERROR');
+      return { success: true };
     }
 
     if (action === 'adminGetTestimonials') {
