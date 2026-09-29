@@ -157,15 +157,17 @@ const API = {
       return { success: true };
     }
 
-    // 2. ADMIN DASHBOARD & ORDERS
+    // 2. ADMIN DASHBOARD (RINGKASAN)
     if (action === 'adminGetDashboard') {
       try {
-        const [ordersRes, appsRes] = await Promise.all([
+        const [ordersRes, appsRes, testiRes] = await Promise.all([
           sb.from('pesanan').select('*').order('tanggal', { ascending: false }),
-          sb.from('aplikasi').select('*')
+          sb.from('aplikasi').select('*'),
+          sb.from('testimoni').select('*')
         ]);
         const orders = ordersRes.data || [];
         const apps = appsRes.data || [];
+        const testi = testiRes.data || [];
 
         let omset = 0;
         let pending = 0;
@@ -173,33 +175,113 @@ const API = {
         let ditolak = 0;
 
         orders.forEach(o => {
-          if (o.status === 'Disetujui' || o.status === 'Lunas') {
+          const st = o.status || 'Menunggu Verifikasi';
+          if (st === 'Disetujui' || st === 'Lunas') {
             omset += Number(o.total_harga || 0);
             disetujui++;
-          } else if (o.status === 'Ditolak') {
+          } else if (st === 'Ditolak') {
             ditolak++;
           } else {
             pending++;
           }
         });
 
+        const appsAktif = apps.filter(a => a.is_aktif !== false).length;
+        const appsSegera = apps.filter(a => a.status === 'Segera Hadir').length;
+
+        // Deret waktu 7 hari terakhir agar charts tidak kosong
+        const deret = [];
+        for (let i = 6; i >= 0; i--) {
+          const d = new Date(Date.now() - i * 86400000);
+          const key = d.toISOString().slice(0, 10);
+          deret.push({ kunci: key, pendapatan: 0, kunjungan: 0, pesanan: 0 });
+        }
+
         return {
+          periode: 'bulan_ini',
+          label: 'Bulan Ini',
+          mode: 'hari',
+          rentang: { mulai: new Date(Date.now() - 30 * 86400000).toISOString(), akhir: new Date().toISOString() },
           ringkas: {
-            omset: omset,
-            total_pesanan: orders.length,
-            menunggu: pending,
-            total_produk: apps.length,
-            delta_persen: null
+            antrean: pending,
+            pesanan_periode: orders.length,
+            pesanan_sukses: disetujui,
+            pendapatan: omset,
+            pendapatan_sebelumnya: 0,
+            delta_persen: null,
+            kunjungan: 0,
+            konversi: null,
+            testimoni_menunggu: 0,
+            testimoni_disetujui: testi.length,
+            testimoni_arsip: 0,
+            rating_rata: 5,
+            email_gagal: 0,
+            aplikasi_total: apps.length,
+            aplikasi_aktif: appsAktif,
+            aplikasi_segera: appsSegera
           },
-          status: { 'Menunggu Verifikasi': pending, 'Disetujui': disetujui, 'Ditolak': ditolak },
-          deret: [],
-          rentang: { mulai: new Date(Date.now() - 30*86400000).toISOString(), akhir: new Date().toISOString() }
+          deret: deret,
+          terlaris: [],
+          status: { 'Disetujui': disetujui, 'Menunggu Verifikasi': pending, 'Ditolak': ditolak },
+          pesanan_total_semua: orders.length
         };
       } catch (e) {
+        console.error('adminGetDashboard error:', e);
         throw new ApiError(e.message, 'DASHBOARD_ERROR');
       }
     }
 
+    // 3. ADMIN SETTINGS (PENGATURAN SISTEM)
+    if (action === 'adminGetSettings') {
+      try {
+        const { data: setRows } = await sb.from('pengaturan').select('*');
+        const nilai = {
+          nama_toko: (window.APP_CONFIG && APP_CONFIG.NAMA_DEFAULT) || 'Katalog Aplikasi Web',
+          whatsapp: (window.APP_CONFIG && APP_CONFIG.WHATSAPP_DEFAULT) || '085655860383',
+          bank_nama: 'Bank Central Asia (BCA)',
+          bank_nomor: '0000 0000 00',
+          bank_atas_nama: 'NAMA PEMILIK REKENING',
+          jam_layanan: '08.00 - 20.00 WIB (Senin s.d. Sabtu)',
+          kota: 'Jakarta, Indonesia',
+          sla_verifikasi: '1x24 jam',
+          hero_judul: 'Aplikasi Web Siap Pakai untuk Kebutuhan Anda'
+        };
+
+        if (setRows) {
+          setRows.forEach(r => { if (r.kunci && r.nilai) nilai[r.kunci] = r.nilai; });
+        }
+
+        return {
+          nilai: nilai,
+          keterangan: {},
+          template_bawaan: {},
+          integrasi: {
+            kuota_email_sisa: 100,
+            spreadsheet_url: '#',
+            folder: [],
+            email_login: Sesi.email() || 'admin@gmail.com'
+          }
+        };
+      } catch (err) {
+        console.error('adminGetSettings error:', err);
+        throw new ApiError(err.message, 'SETTINGS_ERROR');
+      }
+    }
+
+    if (action === 'adminSaveSettings') {
+      try {
+        const nilai = data.nilai || {};
+        const entries = Object.keys(nilai).map(k => ({ kunci: k, nilai: String(nilai[k]) }));
+        for (const item of entries) {
+          await sb.from('pengaturan').upsert(item, { onConflict: 'kunci' });
+        }
+        return { pesan: 'Pengaturan berhasil disimpan.', diubah: entries.length };
+      } catch (err) {
+        throw new ApiError(err.message || 'Gagal menyimpan pengaturan.', 'SETTINGS_ERROR');
+      }
+    }
+
+    // 4. ADMIN ORDERS
     if (action === 'adminGetOrders') {
       const { data: orders, error } = await sb.from('pesanan').select('*, aplikasi(nama)').order('tanggal', { ascending: false });
       if (error) throw new ApiError(error.message, 'DB_ERROR');
@@ -212,38 +294,57 @@ const API = {
         status: o.status === 'MENUNGGU' ? 'Menunggu Verifikasi' : o.status,
         tanggal: o.tanggal,
         aplikasi: (o.aplikasi && o.aplikasi.nama) || o.aplikasi_id || 'Aplikasi Web',
+        versi: '1.0',
         bukti: o.bukti_transfer_url ? { id: o.id, url: o.bukti_transfer_url } : null,
-        catatan: o.catatan || ''
+        catatan: o.catatan || '',
+        email_status: 'Terkirim'
       }));
     }
 
+    if (action === 'adminApproveOrder') {
+      await sb.from('pesanan').update({ status: 'Disetujui', catatan: data.catatan || '' }).eq('id', data.kode);
+      return { pesan: 'Pesanan disetujui.', email_status: 'Terkirim' };
+    }
+
+    if (action === 'adminRejectOrder') {
+      await sb.from('pesanan').update({ status: 'Ditolak', catatan: data.alasan || '' }).eq('id', data.kode);
+      return { pesan: 'Pesanan ditolak.', email_status: 'Terkirim' };
+    }
+
+    // 5. ADMIN APPS (KATALOG)
     if (action === 'adminGetApps') {
       const { data: apps, error } = await sb.from('aplikasi').select('*').order('created_at', { ascending: false });
       if (error) throw new ApiError(error.message, 'DB_ERROR');
       return apps || [];
     }
 
-    if (action === 'adminGetSettings') {
-      const { data, error } = await sb.from('pengaturan').select('*');
+    if (action === 'adminSaveApp') {
+      const item = Object.assign({}, data);
+      const { data: res, error } = await sb.from('aplikasi').upsert(item).select().single();
       if (error) throw new ApiError(error.message, 'DB_ERROR');
-      const res = {};
-      (data || []).forEach(r => { res[r.kunci] = { value: r.nilai }; });
       return res;
     }
 
-    if (action === 'adminGetFaq') {
-      const { data, error } = await sb.from('faq').select('*').order('urutan', { ascending: true });
+    if (action === 'adminDeleteApp') {
+      const { error } = await sb.from('aplikasi').delete().eq('id', data.id);
       if (error) throw new ApiError(error.message, 'DB_ERROR');
-      return data || [];
+      return { success: true };
+    }
+
+    // 6. ADMIN FAQ & TESTIMONI
+    if (action === 'adminGetFaq') {
+      const { data: faqs, error } = await sb.from('faq').select('*').order('urutan', { ascending: true });
+      if (error) throw new ApiError(error.message, 'DB_ERROR');
+      return faqs || [];
     }
 
     if (action === 'adminGetTestimonials') {
-      const { data, error } = await sb.from('testimoni').select('*').order('created_at', { ascending: false });
+      const { data: tests, error } = await sb.from('testimoni').select('*').order('created_at', { ascending: false });
       if (error) throw new ApiError(error.message, 'DB_ERROR');
-      return data || [];
+      return tests || [];
     }
 
-    // 3. CHECKOUT & ORDERS PUBLIK
+    // 7. CHECKOUT & ORDERS PUBLIK
     if (action === 'createOrder') {
       try {
         let buktiUrl = '';
