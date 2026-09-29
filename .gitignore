@@ -1,1 +1,8 @@
+# Abaikan folder BACK (Google Apps Script)
 BACK/
+BACK/*
+
+# Node modules & environment files
+node_modules/
+.env*
+.vercel
