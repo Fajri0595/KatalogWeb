@@ -52,6 +52,13 @@ const ambil = async (aksi, data) => API.admin(aksi, data);
 async function muatPesanan(paksa) { if (!Adm.orders || paksa) { Adm.orders = await ambil('adminGetOrders'); perbaruiBadge(); } return Adm.orders; }
 async function muatTestimoni(paksa) { if (!Adm.tes || paksa) { Adm.tes = await ambil('adminGetTestimonials'); perbaruiBadge(); } return Adm.tes; }
 async function muatAplikasi(paksa) { if (!Adm.apps || paksa) Adm.apps = await ambil('adminGetApps'); return Adm.apps; }
+function praMuatAdmin() {
+  if (!Sesi.ambil()) return;
+  // Pre-fetch seluruh tab admin di latar belakang (apps, setting, faq) agar saat tab diklik langsung 0ms
+  if (!Adm.apps) muatAplikasi(false).catch(() => {});
+  if (!Adm.setting) ambil('adminGetSettings').then((s) => { Adm.setting = s; }).catch(() => {});
+  if (!Adm.faq) ambil('adminGetFaq').then((f) => { Adm.faq = f; }).catch(() => {});
+}
 function unduhCsv(nama, baris) {
   const sel = (v) => '"' + String(v === undefined || v === null ? '' : v).replace(/"/g, '""') + '"';
   const csv = '\ufeff' + baris.map((r) => r.map(sel).join(',')).join('\r\n');
@@ -77,6 +84,7 @@ async function pgAdmin(c) {
   layoutAdmin(k, bagian[1] ? (bagian[1] === 'baru' ? 'Tambah Aplikasi' : 'Edit Aplikasi') : judul);
   const el = $('#adm-main');
   const ctx = { el, query: c.query, batal: c.batal, bagian };
+  praMuatAdmin();
   try {
     if (k === 'ringkasan') await admRingkasan(ctx);
     else if (k === 'pesanan') await admPesanan(ctx);
@@ -371,7 +379,21 @@ async function admPesanan(c) {
   $('#segar').addEventListener('click', () => segarkan());
   $('#csv').addEventListener('click', () => unduhCsv('rekap-pesanan.csv', [['Kode', 'Tanggal', 'Aplikasi', 'Versi', 'Nama', 'Email', 'WhatsApp', 'Nominal', 'Status', 'Catatan', 'Tanggal Verifikasi', 'Status Email']].concat(orders.map((o) => [o.kode, o.tanggal, o.aplikasi, o.versi, o.nama, o.email, o.wa, o.jumlah, o.status, o.catatan, o.tanggal_verifikasi, o.email_status]))));
   $('#q').addEventListener('input', debounce((e) => { Adm.q = e.target.value; Adm.hal = 1; gambarTab(); gambarTabel(); gambarPanel(); }, 250));
-  on(el, 'click', '[data-tab]', (e, t) => { Adm.tab = t.dataset.tab; Adm.hal = 1; Adm.sel = ''; gambarTab(); gambarPanel().then(gambarTabel); });
+  on(el, 'click', '[data-tab]', (e, t) => {
+    Adm.tab = t.dataset.tab;
+    Adm.hal = 1;
+    Adm.sel = '';
+    $$('#tabs button', el).forEach((b) => b.classList.toggle('on', b.dataset.tab === Adm.tab));
+    gambarPanel().then(() => {
+      gambarTabel();
+      const pnl = $('#panel');
+      if (pnl) {
+        pnl.classList.remove('tab-enter');
+        void pnl.offsetWidth;
+        pnl.classList.add('tab-enter');
+      }
+    });
+  });
   on(el, 'click', '[data-pilih]', (e, t) => { Adm.sel = t.dataset.pilih; const o = orders.find((x) => x.kode === Adm.sel); if (o && Adm.tab !== 'semua') Adm.tab = o.status === 'Menunggu Verifikasi' ? 'menunggu' : o.status === 'Disetujui' ? 'disetujui' : 'ditolak'; gambarTab(); gambarTabel(); gambarPanel(); $('#panel').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
   on(el, 'click', '[data-h]', (e, t) => { Adm.hal = +t.dataset.h; gambarTabel(); });
   on(el, 'click', '[data-nav]', (e, t) => { const p = pending(); const i = p.findIndex((x) => x.kode === Adm.sel); const n = p[(i + +t.dataset.nav + p.length) % p.length]; if (n) { Adm.sel = n.kode; gambarTabel(); gambarPanel(); } });

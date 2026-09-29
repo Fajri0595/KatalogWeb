@@ -127,20 +127,38 @@ function kartuApp(a) {
     </div></article>`;
 }
 function gambarKatalog() {
+function praMuatApp(id) {
+  if (id && !S.detail[id]) {
+    API.get('getApp', { id }).then((d) => { S.detail[id] = d; }).catch(() => {});
+  }
+}
+
+function gambarKatalog(hanyaGrid) {
   const semua = saringApps();
   const total = semua.length;
   const hal = Math.min(FK.hal, Math.max(1, Math.ceil(total / PER_HAL)));
   FK.hal = hal;
   const potong = semua.slice((hal - 1) * PER_HAL, hal * PER_HAL);
-  const kats = ['Semua'].concat(Array.from(new Set(S.apps.map((a) => a.kategori))));
-  $('#chips').innerHTML = kats.map((k) => {
-    const n = k === 'Semua' ? S.apps.length : S.apps.filter((a) => a.kategori === k).length;
-    return `<button class="chip ${FK.kat === k ? 'active' : ''}" data-kat="${esc(k)}">${esc(k)} <span class="n">${n}</span></button>`;
-  }).join('');
+
+  if (!hanyaGrid) {
+    const kats = ['Semua'].concat(Array.from(new Set(S.apps.map((a) => a.kategori))));
+    $('#chips').innerHTML = kats.map((k) => {
+      const n = k === 'Semua' ? S.apps.length : S.apps.filter((a) => a.kategori === k).length;
+      return `<button class="chip ${FK.kat === k ? 'active' : ''}" data-kat="${esc(k)}">${esc(k)} <span class="n">${n}</span></button>`;
+    }).join('');
+  } else {
+    $$('#chips button').forEach((b) => b.classList.toggle('active', b.dataset.kat === FK.kat));
+  }
+
   const grid = $('#grid');
   grid.className = 'grid-cards' + (FK.tampil === 'list' ? ' list' : '');
   grid.innerHTML = potong.length ? potong.map(kartuApp).join('') :
     `<div class="card empty" style="grid-column:1/-1"><div class="em-ic">${icon('search')}</div><h3>Aplikasi tidak ditemukan</h3><p>Coba kata kunci lain atau pilih kategori Semua untuk menampilkan seluruh katalog.</p><button class="btn btn-secondary" style="margin-top:16px" id="reset">Reset Filter</button></div>`;
+
+  grid.classList.remove('tab-enter');
+  void grid.offsetWidth;
+  grid.classList.add('tab-enter');
+
   const halTotal = Math.max(1, Math.ceil(total / PER_HAL));
   const awal = total ? (hal - 1) * PER_HAL + 1 : 0, akhir = Math.min(total, hal * PER_HAL);
   let nomor = '';
@@ -183,9 +201,16 @@ function pgKatalog(c) {
   q.addEventListener('input', debounce(() => { FK.q = q.value; FK.hal = 1; gambarKatalog(); }, 200));
   $('#fcari').addEventListener('submit', (e) => { e.preventDefault(); FK.q = q.value; FK.hal = 1; gambarKatalog(); $('#grid').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
   $('#urut').addEventListener('change', (e) => { FK.urut = e.target.value; FK.hal = 1; gambarKatalog(); });
-  on(c.el, 'click', '[data-kat]', (e, t) => { FK.kat = t.dataset.kat; FK.hal = 1; gambarKatalog(); });
+  on(c.el, 'click', '[data-kat]', (e, t) => { FK.kat = t.dataset.kat; FK.hal = 1; gambarKatalog(true); });
+  on(c.el, 'pointerenter', '.pcard', (e, t) => {
+    const link = t.querySelector('a[href^="#/aplikasi/"]');
+    if (link) {
+      const m = link.getAttribute('href').match(/#\/aplikasi\/([^?]+)/);
+      if (m && m[1]) praMuatApp(m[1]);
+    }
+  });
   on(c.el, 'click', '.seg button', (e, t) => { FK.tampil = t.dataset.v; gambarKatalog(); });
-  on(c.el, 'click', '[data-hal]', (e, t) => { FK.hal = +t.dataset.hal; gambarKatalog(); $('#grid').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+  on(c.el, 'click', '[data-hal]', (e, t) => { FK.hal = +t.dataset.hal; gambarKatalog(true); $('#grid').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
   on(c.el, 'click', '#reset', () => { FK.q = ''; FK.kat = 'Semua'; $('#q').value = ''; gambarKatalog(); });
   gambarKatalog();
   if (!ss('kaw_tv_katalog')) { ss('kaw_tv_katalog', 1); API.post('trackView', { id: '_KATALOG' }).catch(() => {}); }
@@ -853,10 +878,24 @@ function pgTestimoni(c) {
 // ============================================================
 // BANTUAN & FAQ
 // ============================================================
+function skelBantuan() {
+  return `<section class="help-hero"><div class="container"><div class="skel" style="width:180px;height:24px;border-radius:9999px;margin:0 auto 16px"></div><div class="skel" style="width:65%;max-width:600px;height:38px;margin:0 auto 12px"></div><div class="skel" style="width:50%;max-width:440px;height:20px;margin:0 auto 24px"></div><div class="skel" style="width:90%;max-width:560px;height:44px;border-radius:10px;margin:0 auto"></div></div></section>
+    <div class="container" style="padding-top:24px">
+      <div class="help-steps">${'<div class="card hs"><div class="skel" style="width:36px;height:24px;margin-bottom:8px"></div><div class="skel" style="width:60%;height:20px;margin-bottom:8px"></div><div class="skel" style="height:14px;margin-bottom:6px"></div><div class="skel" style="height:14px;width:80%"></div></div>'.repeat(3)}</div>
+      <div class="help-grid" style="margin-top:48px">
+        <div><div class="card card-p"><div class="skel" style="height:16px;width:50%;margin-bottom:12px"></div>${'<div class="skel" style="height:36px;margin-bottom:8px;border-radius:8px"></div>'.repeat(4)}</div></div>
+        <div>${'<div class="card card-p" style="margin-bottom:12px"><div class="skel" style="height:22px;width:70%;margin-bottom:8px"></div><div class="skel" style="height:14px;width:90%"></div></div>'.repeat(3)}</div>
+      </div>
+    </div>`;
+}
+
 async function pgBantuan(c) {
-  let faq;
-  try { faq = S.faq || await API.get('getFaq'); S.faq = faq; } catch (e) { faq = []; }
-  if (c.batal()) return;
+  let faq = S.faq;
+  if (!faq) {
+    c.el.innerHTML = skelBantuan();
+    try { faq = await API.get('getFaq'); S.faq = faq; } catch (e) { faq = []; }
+    if (c.batal()) return;
+  }
   const cats = Array.from(new Set(faq.map((f) => f.kategori)));
   const F = { q: '', cat: 'Semua' };
   const wa = set('whatsapp'), email = set('email_admin');
@@ -866,7 +905,7 @@ async function pgBantuan(c) {
     <div class="container" style="padding-top:24px">
       <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:20px"><div><div class="eyebrow">Panduan Pengguna</div><h2 class="h-lg">Alur Cepat Pemesanan &amp; Pembelian</h2></div><p class="muted t-sm" style="max-width:340px">Tiga tahapan sederhana dan transparan untuk memperoleh lisensi tanpa perlu registrasi akun berbelit.</p></div>
       <div class="help-steps">
-        <div class="card hs"><span class="hic">${icon('cart')}</span><div class="no">01</div><h3 class="h-sm">Pilih &amp; Beli</h3><p class="muted t-sm" style="margin:6px 0 12px">Telusuri aplikasi di katalog, isi formulir tanpa perlu membuat akun. Data Anda langsung diproses untuk pembuatan akses lisensi unik.</p><a href="#/" class="t-sm link-btn">Langsung ke katalog ${icon('arrow-right')}</a></div>
+        <div class="card hs"><span class="hic">${icon('cart')}</span><div class="no">01</div><h3 class="h-sm">Pilih &amp; Beli</h3><p class="muted t-sm" style="margin-6px 0 12px">Telusuri aplikasi di katalog, isi formulir tanpa perlu membuat akun. Data Anda langsung diproses untuk pembuatan akses lisensi unik.</p><a href="#/" class="t-sm link-btn">Langsung ke katalog ${icon('arrow-right')}</a></div>
         <div class="card hs"><span class="hic">${icon('landmark')}</span><div class="no">02</div><h3 class="h-sm">Transfer &amp; Unggah</h3><p class="muted t-sm" style="margin:6px 0 12px">Transfer ke rekening resmi ${esc(set('bank_nama'))} dan unggah bukti transfer langsung pada formulir pemesanan.</p><span class="t-sm" style="color:var(--indigo)">${icon('check-circle')} Rekening resmi</span></div>
         <div class="card hs"><span class="hic">${icon('mail')}</span><div class="no">03</div><h3 class="h-sm">Terima Akses</h3><p class="muted t-sm" style="margin:6px 0 12px">Admin memverifikasi maksimal ${esc(set('sla_verifikasi', '1×24 jam'))}, tautan privat dan tutorial langsung masuk ke email Anda.</p><span class="t-sm" style="color:var(--indigo)">${icon('zap')} Maks ${esc(set('sla_verifikasi', '1×24 jam'))}</span></div></div>
       <div class="help-grid" style="margin-top:48px">
@@ -880,20 +919,30 @@ async function pgBantuan(c) {
       <div class="row c2" style="margin-top:32px;align-items:stretch">
         <div class="card card-p"><div class="eyebrow">Garansi Kode</div><h3 class="h-md" style="margin:4px 0 8px">${esc(set('garansi_judul'))}</h3><p class="muted t-sm">${esc(set('garansi_teks'))}</p><div class="row c3" style="margin-top:16px">${[1, 2, 3].map((i) => { const p = set('garansi_stat_' + i).split('|'); return `<div style="padding:12px;background:var(--alt);border-radius:8px;text-align:center"><b class="mono" style="color:var(--indigo)">${esc(p[0] || '')}</b><div class="hint">${esc(p[1] || '')}</div></div>`; }).join('')}</div></div>
         <div class="card card-p" style="display:flex;flex-direction:column;justify-content:center"><div class="eyebrow">Beri Tanggapan</div><h3 class="h-md" style="margin:4px 0 8px">Puas dengan Aplikasi Kami?</h3><p class="muted t-sm" style="margin-bottom:16px">Bantu pengembang lain menemukan solusi yang tepat dengan membagikan pengalaman penggunaan aplikasi di katalog kami.</p><div><a class="btn btn-accent" href="#/testimoni">${icon('message-square')} Kirim Testimoni Pengguna</a></div></div></div></div>`;
-  function gambar() {
+  function gambar(hanyaFaq) {
     const q = F.q.trim().toLowerCase();
     const daftar = faq.filter((f) => (F.cat === 'Semua' || f.kategori === F.cat) && (!q || (f.pertanyaan + ' ' + f.jawaban).toLowerCase().indexOf(q) >= 0));
-    $('#topnav').innerHTML = ['Semua'].concat(cats).map((k) => `<button data-cat="${esc(k)}" class="${F.cat === k ? 'on' : ''}"><span>${icon(k === 'Semua' ? 'grid' : IK[cats.indexOf(k) % IK.length])} ${k === 'Semua' ? 'Semua Topik' : esc(k)}</span><span class="n">${k === 'Semua' ? faq.length : faq.filter((f) => f.kategori === k).length}</span></button>`).join('');
-    if (!daftar.length) { $('#faq').innerHTML = `<div class="card empty"><div class="em-ic">${icon('search')}</div><h3>Topik tidak ditemukan</h3><p>Coba kata kunci lain, atau hubungi developer langsung.</p></div>`; return; }
+    if (!hanyaFaq) {
+      $('#topnav').innerHTML = ['Semua'].concat(cats).map((k) => `<button data-cat="${esc(k)}" class="${F.cat === k ? 'on' : ''}"><span>${icon(k === 'Semua' ? 'grid' : IK[cats.indexOf(k) % IK.length])} ${k === 'Semua' ? 'Semua Topik' : esc(k)}</span><span class="n">${k === 'Semua' ? faq.length : faq.filter((f) => f.kategori === k).length}</span></button>`).join('');
+    } else {
+      $$('#topnav button', c.el).forEach(b => b.classList.toggle('on', b.dataset.cat === F.cat));
+    }
+    const faqEl = $('#faq');
+    if (!daftar.length) { faqEl.innerHTML = `<div class="card empty"><div class="em-ic">${icon('search')}</div><h3>Topik tidak ditemukan</h3><p>Coba kata kunci lain, atau hubungi developer langsung.</p></div>`; return; }
     let html = '', kat = null;
     daftar.forEach((f, i) => {
       if (f.kategori !== kat) { kat = f.kategori; html += `<div class="faq-cat">${icon(IK[Math.max(0, cats.indexOf(kat)) % IK.length])} ${esc(kat)}</div>`; }
       html += `<div class="acc ${i === 0 && !q ? 'open' : ''}"><button type="button" aria-expanded="false"><span>${esc(f.pertanyaan)}</span>${icon('chevron-down')}</button><div class="ans">${esc(f.jawaban)}</div></div>`;
     });
-    $('#faq').innerHTML = html;
+    faqEl.innerHTML = html;
+    if (hanyaFaq) {
+      faqEl.classList.remove('tab-enter');
+      void faqEl.offsetWidth;
+      faqEl.classList.add('tab-enter');
+    }
   }
   gambar();
-  $('#hq').addEventListener('input', debounce((e) => { F.q = e.target.value; gambar(); }, 200));
-  on(c.el, 'click', '[data-cat]', (e, t) => { F.cat = t.dataset.cat; gambar(); });
+  $('#hq').addEventListener('input', debounce((e) => { F.q = e.target.value; gambar(true); }, 200));
+  on(c.el, 'click', '[data-cat]', (e, t) => { F.cat = t.dataset.cat; gambar(true); });
   on(c.el, 'click', '.acc > button', (e, t) => { const a = t.closest('.acc'); a.classList.toggle('open'); t.setAttribute('aria-expanded', a.classList.contains('open')); });
 }

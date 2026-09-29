@@ -28,17 +28,27 @@ async function admAplikasi(c) {
     return apps.filter((a) => (AdmA.kat === 'Semua' || a.kategori === AdmA.kat) && (AdmA.status === 'Semua' || a.status === AdmA.status) && (!q || (a.nama + a.id + a.kategori).toLowerCase().indexOf(q) >= 0))
       .sort((x, y) => x.urutan - y.urutan);
   }
-  function gambar() {
+  function gambar(hanyaTbl) {
     const daftar = saring(); const per = 8, tot = Math.max(1, Math.ceil(daftar.length / per)); AdmA.hal = Math.min(AdmA.hal, tot);
-    $('#stt', el).innerHTML = ['Semua', 'Tersedia', 'Segera Hadir', 'Tidak Dijual'].map((s) => `<button class="${AdmA.status === s ? 'on' : ''}" data-st="${esc(s)}">${s}</button>`).join('');
-    $('#tbl').innerHTML = daftar.length ? `<table class="tbl"><thead><tr><th>Aplikasi</th><th>Harga</th><th>Status</th><th>Versi &amp; Rilis</th><th>Tampil Publik</th><th>Terjual</th><th>Diubah</th><th style="text-align:right">Aksi</th></tr></thead><tbody>${daftar.slice((AdmA.hal - 1) * per, AdmA.hal * per).map((a) => `<tr><td><div class="app-cell"><div class="app-ic">${a.thumb ? `<img alt="" src="${esc(driveThumb(a.thumb, 100))}">` : icon('package')}</div><div style="min-width:0"><b>${esc(a.nama)}</b><div class="sub mono">${esc(a.id)} • ${esc(a.kategori)}</div></div></div></td><td class="mono">${rupiah(a.harga)}</td><td>${pil(a.status)}</td><td class="sub">v${esc(a.versi || '-')}<br>${esc(tgl(a.tanggal_rilis))}</td><td><label class="switch"><input type="checkbox" data-toggle="${esc(a.id)}" ${a.tampil_publik ? 'checked' : ''}></label></td><td class="mono">${a.jumlah_pesanan}</td><td class="sub">${esc(relatif(a.diubah_pada))}</td><td style="text-align:right"><a class="btn btn-secondary btn-sm" href="#/admin/aplikasi/${esc(a.id)}">${icon('pencil')} Ubah</a> <button class="btn btn-ghost btn-sm btn-icon" data-hapus="${esc(a.id)}" aria-label="Hapus">${icon('trash')}</button></td></tr>`).join('')}</tbody></table>` : `<div class="empty"><div class="em-ic">${icon('package')}</div><h3>Belum ada aplikasi</h3><p>Klik "Tambah Aplikasi Baru" untuk mengisi katalog.</p></div>`;
+    if (!hanyaTbl) {
+      $('#stt', el).innerHTML = ['Semua', 'Tersedia', 'Segera Hadir', 'Tidak Dijual'].map((s) => `<button class="${AdmA.status === s ? 'on' : ''}" data-st="${esc(s)}">${s}</button>`).join('');
+    } else {
+      $$('#stt button', el).forEach((b) => b.classList.toggle('on', b.dataset.st === AdmA.status));
+    }
+    const tblEl = $('#tbl');
+    tblEl.innerHTML = daftar.length ? `<table class="tbl"><thead><tr><th>Aplikasi</th><th>Harga</th><th>Status</th><th>Versi &amp; Rilis</th><th>Tampil Publik</th><th>Terjual</th><th>Diubah</th><th style="text-align:right">Aksi</th></tr></thead><tbody>${daftar.slice((AdmA.hal - 1) * per, AdmA.hal * per).map((a) => `<tr><td><div class="app-cell"><div class="app-ic">${a.thumb ? `<img alt="" src="${esc(driveThumb(a.thumb, 100))}">` : icon('package')}</div><div style="min-width:0"><b>${esc(a.nama)}</b><div class="sub mono">${esc(a.id)} • ${esc(a.kategori)}</div></div></div></td><td class="mono">${rupiah(a.harga)}</td><td>${pil(a.status)}</td><td class="sub">v${esc(a.versi || '-')}<br>${esc(tgl(a.tanggal_rilis))}</td><td><label class="switch"><input type="checkbox" data-toggle="${esc(a.id)}" ${a.tampil_publik ? 'checked' : ''}></label></td><td class="mono">${a.jumlah_pesanan}</td><td class="sub">${esc(relatif(a.diubah_pada))}</td><td style="text-align:right"><a class="btn btn-secondary btn-sm" href="#/admin/aplikasi/${esc(a.id)}">${icon('pencil')} Ubah</a> <button class="btn btn-ghost btn-sm btn-icon" data-hapus="${esc(a.id)}" aria-label="Hapus">${icon('trash')}</button></td></tr>`).join('')}</tbody></table>` : `<div class="empty"><div class="em-ic">${icon('package')}</div><h3>Belum ada aplikasi</h3><p>Klik "Tambah Aplikasi Baru" untuk mengisi katalog.</p></div>`;
+    if (hanyaTbl) {
+      tblEl.classList.remove('tab-enter');
+      void tblEl.offsetWidth;
+      tblEl.classList.add('tab-enter');
+    }
     $('#fot').innerHTML = `<span>Menampilkan <b style="color:var(--ink)">${daftar.length ? (AdmA.hal - 1) * per + 1 : 0}-${Math.min(daftar.length, AdmA.hal * per)}</b> dari <b style="color:var(--ink)">${daftar.length}</b> total item katalog</span><div class="pager" style="margin:0;padding:0;border:0"><div class="pg"><button data-h="${AdmA.hal - 1}" ${AdmA.hal <= 1 ? 'disabled' : ''}>${icon('chevron-left')}</button>${Array.from({ length: tot }, (_, i) => `<button class="${i + 1 === AdmA.hal ? 'on' : ''}" data-h="${i + 1}">${i + 1}</button>`).join('')}<button data-h="${AdmA.hal + 1}" ${AdmA.hal >= tot ? 'disabled' : ''}>${icon('chevron-right')}</button></div></div>`;
   }
   gambar();
   $('#segar').addEventListener('click', async () => { await muatAplikasi(true); apps.length = 0; Adm.apps.forEach((a) => apps.push(a)); gambar(); toast('Katalog disegarkan.', 'ok', 2000); });
-  $('#q').addEventListener('input', debounce((e) => { AdmA.q = e.target.value; AdmA.hal = 1; gambar(); }, 200));
-  $('#kat').addEventListener('change', (e) => { AdmA.kat = e.target.value; AdmA.hal = 1; gambar(); });
-  on(el, 'click', '[data-st]', (e, t) => { AdmA.status = t.dataset.st; AdmA.hal = 1; gambar(); });
+  $('#q').addEventListener('input', debounce((e) => { AdmA.q = e.target.value; AdmA.hal = 1; gambar(true); }, 200));
+  $('#kat').addEventListener('change', (e) => { AdmA.kat = e.target.value; AdmA.hal = 1; gambar(true); });
+  on(el, 'click', '[data-st]', (e, t) => { AdmA.status = t.dataset.st; AdmA.hal = 1; gambar(true); });
   on(el, 'click', '[data-h]', (e, t) => { AdmA.hal = +t.dataset.h; gambar(); });
   on(el, 'change', '[data-toggle]', async (e, t) => {
     const id = t.dataset.toggle, tampil = t.checked;
@@ -242,15 +252,25 @@ async function admTestimoni(c) {
       <p class="quote">“${esc(t.isi)}”</p>
       <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div style="display:flex;gap:8px">${aksi}</div>${t.email_pembeli ? `<a class="btn btn-ghost btn-sm" href="mailto:${esc(t.email_pembeli)}">${icon('mail')} Hubungi Pembeli</a>` : ''}</div></div>`;
   }
-  function gambar() {
+  function gambar(hanyaList) {
     const n = (s) => tes.filter((t) => t.status === s).length;
-    $('#tabs', el).innerHTML = `<div class="tabs seg-t">${[['Menunggu', 'Menunggu Moderasi'], ['Disetujui', 'Disetujui'], ['Ditolak', 'Ditolak / Disembunyikan']].map((t) => `<button class="${AdmT.tab === t[0] ? 'on' : ''}" data-tab="${t[0]}">${t[1]} <span class="n ${t[0] === 'Menunggu' && n('Menunggu') ? 'hot' : ''}">${t[0] === 'Ditolak' ? n('Ditolak') + n('Disembunyikan') : n(t[0])}</span></button>`).join('')}</div>`;
+    if (!hanyaList) {
+      $('#tabs', el).innerHTML = `<div class="tabs seg-t">${[['Menunggu', 'Menunggu Moderasi'], ['Disetujui', 'Disetujui'], ['Ditolak', 'Ditolak / Disembunyikan']].map((t) => `<button class="${AdmT.tab === t[0] ? 'on' : ''}" data-tab="${t[0]}">${t[1]} <span class="n ${t[0] === 'Menunggu' && n('Menunggu') ? 'hot' : ''}">${t[0] === 'Ditolak' ? n('Ditolak') + n('Disembunyikan') : n(t[0])}</span></button>`).join('')}</div>`;
+    } else {
+      $$('#tabs button', el).forEach((b) => b.classList.toggle('on', b.dataset.tab === AdmT.tab));
+    }
     const d = daftar();
-    $('#list').innerHTML = d.length ? d.map(kartu).join('') : `<div class="card empty"><div class="em-ic">${icon('message-square')}</div><h3>Tidak ada testimoni pada tab ini</h3></div>`;
+    const listEl = $('#list');
+    listEl.innerHTML = d.length ? d.map(kartu).join('') : `<div class="card empty"><div class="em-ic">${icon('message-square')}</div><h3>Tidak ada testimoni pada tab ini</h3></div>`;
+    if (hanyaList) {
+      listEl.classList.remove('tab-enter');
+      void listEl.offsetWidth;
+      listEl.classList.add('tab-enter');
+    }
   }
   gambar();
-  $('#q').addEventListener('input', debounce((e) => { AdmT.q = e.target.value; gambar(); }, 200));
-  on(el, 'click', '[data-tab]', (e, t) => { AdmT.tab = t.dataset.tab; gambar(); });
+  $('#q').addEventListener('input', debounce((e) => { AdmT.q = e.target.value; gambar(true); }, 200));
+  on(el, 'click', '[data-tab]', (e, t) => { AdmT.tab = t.dataset.tab; gambar(true); });
   on(el, 'click', '[data-aksi]', async (e, t) => {
     const item = tes.find((x) => x.id === t.dataset.id);
     if (t.dataset.aksi === 'tolak' && !(await konfirmasi('Tolak testimoni ini?', 'Testimoni tidak akan tampil di halaman publik.', { ok: 'Ya, Tolak', bahaya: true }))) return;
@@ -479,9 +499,17 @@ async function admPengaturan(c) {
       <div class="card card-p"><div class="sec-title" style="margin-bottom:12px">${icon('mail')} Kuota &amp; Pengiriman</div><div class="kv"><span>Sisa kuota email hari ini</span><span>${d.integrasi.kuota_email_sisa === null ? '-' : d.integrasi.kuota_email_sisa}</span></div><div class="kv"><span>Email login admin</span><span class="mono">${esc(d.integrasi.email_login || '-')}</span></div></div>
       <div class="card card-p"><div class="sec-title" style="margin-bottom:12px">${icon('key')} Kata Sandi Admin</div><button class="btn btn-secondary btn-block" id="ubahsandi">${icon('lock')} Ubah Kata Sandi</button></div></div>`;
   }
-  function gambarPanel() {
-    $('#tabs', el).innerHTML = TABS.map((t) => `<button class="${AdmP.tab === t[0] ? 'on' : ''}" data-ptab="${t[0]}">${icon(t[2])} ${t[1]}</button>`).join('');
-    $('#panel').innerHTML = ({ rekening: panelRekening, kupon: panelKupon, kontak: panelKontak, halaman: panelHalaman, faq: panelFaq, email: panelEmail, integrasi: panelIntegrasi })[AdmP.tab]();
+  function gambarPanel(hanyaPanel) {
+    if (!hanyaPanel) {
+      $('#tabs', el).innerHTML = TABS.map((t) => `<button class="${AdmP.tab === t[0] ? 'on' : ''}" data-ptab="${t[0]}">${icon(t[2])} ${t[1]}</button>`).join('');
+    } else {
+      $$('#tabs button', el).forEach((b) => b.classList.toggle('on', b.dataset.ptab === AdmP.tab));
+    }
+    const pnl = $('#panel');
+    pnl.innerHTML = ({ rekening: panelRekening, kupon: panelKupon, kontak: panelKontak, halaman: panelHalaman, faq: panelFaq, email: panelEmail, integrasi: panelIntegrasi })[AdmP.tab]();
+    pnl.classList.remove('tab-enter');
+    void pnl.offsetWidth;
+    pnl.classList.add('tab-enter');
     $$('#panel input,#panel textarea,#panel select', el).forEach((i) => i.addEventListener('input', () => { simpanField(i); tandai(); }));
     if (AdmP.tab === 'kupon') {
       gambarKupon();
@@ -516,13 +544,7 @@ async function admPengaturan(c) {
   gambarPanel();
   on(el, 'click', '[data-ptab]', (e, t) => {
     AdmP.tab = t.dataset.ptab;
-    gambarPanel();
-    const pnl = $('#panel');
-    if (pnl) {
-      pnl.classList.remove('page-enter');
-      void pnl.offsetWidth;
-      pnl.classList.add('page-enter');
-    }
+    gambarPanel(true);
   });
   on(el, 'change', '[data-tgl-kupon]', (e, t) => {
     const idx = +t.dataset.tglKupon;

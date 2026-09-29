@@ -46,13 +46,27 @@ async function muatBootstrap() {
   try { lastUpdate = localStorage.getItem('kaw_last_update') || '0'; } catch (e) {}
   const c = ss('kaw_boot');
   if (S.siap && c && c.u === lastUpdate) return;
-  if (c && c.u === lastUpdate && Date.now() - c.t < 60 * 1000) {
+  // Stale-While-Revalidate: jika ada data tersimpan, langsung pakai seketika (0ms delay)
+  if (c && c.u === lastUpdate && c.d) {
     S.pengaturan = c.d.pengaturan || {};
     if (!S.pengaturan.whatsapp || /0000-0000|1234567890|contoh/i.test(S.pengaturan.whatsapp)) {
       S.pengaturan.whatsapp = (window.APP_CONFIG && APP_CONFIG.WHATSAPP_DEFAULT) || '085655860383';
     }
-    S.apps = c.d.aplikasi;
+    S.apps = c.d.aplikasi || [];
     S.siap = true;
+
+    // Jika cache lebih dari 3 menit, perbarui di latar belakang tanpa menunda UI
+    if (Date.now() - c.t > 3 * 60 * 1000) {
+      API.get('getBootstrap').then(d => {
+        if (!d) return;
+        S.pengaturan = Object.assign({}, S.pengaturan, d.pengaturan || {});
+        if (!S.pengaturan.whatsapp || /0000-0000|1234567890|contoh/i.test(S.pengaturan.whatsapp)) {
+          S.pengaturan.whatsapp = (window.APP_CONFIG && APP_CONFIG.WHATSAPP_DEFAULT) || '085655860383';
+        }
+        S.apps = d.aplikasi || [];
+        ss('kaw_boot', { t: Date.now(), u: lastUpdate, d });
+      }).catch(() => {});
+    }
     return;
   }
   const d = await API.get('getBootstrap');
@@ -65,6 +79,14 @@ async function muatBootstrap() {
   ss('kaw_boot', { t: Date.now(), u: lastUpdate, d });
 }
 
+function praMuatPublik() {
+  // Lakukan pre-fetch FAQ publik di latar belakang agar klik tab Bantuan langsung 0ms
+  if (!S.faq && !S.memuatFaq) {
+    S.memuatFaq = true;
+    API.get('getFaq').then(f => { S.faq = f; S.memuatFaq = false; }).catch(() => { S.memuatFaq = false; });
+  }
+}
+
 function skelHalaman() {
   return `<div class="container" style="padding-top:48px"><div class="skel" style="height:40px;width:50%;margin:0 auto 16px"></div><div class="skel" style="height:20px;width:65%;margin:0 auto 32px"></div>
     <div class="grid-cards" style="margin-top:48px">${'<div class="card" style="padding:16px"><div class="skel" style="aspect-ratio:16/10"></div><div class="skel" style="height:14px;width:40%;margin-top:16px"></div><div class="skel" style="height:20px;margin-top:10px"></div><div class="skel" style="height:14px;margin-top:10px"></div></div>'.repeat(3)}</div></div>`;
@@ -74,6 +96,7 @@ async function jalankan() {
   const id = ++tokenRender;
   const batal = () => id !== tokenRender;
   const { path, query } = parseHash();
+  if (window.TopBar) TopBar.start();
   window.scrollTo(0, 0);
   document.body.classList.remove('has-buybar');
 
@@ -86,28 +109,35 @@ async function jalankan() {
       void admMain.offsetWidth;
       admMain.classList.add('page-enter');
     }
+    if (window.TopBar) TopBar.done();
     return;
   }
   const hit = cocokRute(path);
-  if (!hit) { location.replace('#/'); return; }
+  if (!hit) { if (window.TopBar) TopBar.done(); location.replace('#/'); return; }
   layoutPublik(hit.r.n);
   const el = $('#page');
   document.title = S.pengaturan.nama_toko || APP_CONFIG.NAMA_DEFAULT;
   if (!S.siap) {
     el.innerHTML = skelHalaman();
     try { await muatBootstrap(); }
-    catch (e) { if (!batal()) galat(el, e, () => jalankan()); return; }
+    catch (e) { if (window.TopBar) TopBar.done(); if (!batal()) galat(el, e, () => jalankan()); return; }
     if (batal()) return;
     layoutPublik(hit.r.n);
     document.title = S.pengaturan.nama_toko || APP_CONFIG.NAMA_DEFAULT;
   }
+  praMuatPublik();
   try {
     await hit.r.f({ el, params: hit.params, query, batal });
     el.classList.remove('page-enter');
     void el.offsetWidth;
     el.classList.add('page-enter');
+    if (window.TopBar) TopBar.done();
   }
-  catch (e) { console.error(e); if (!batal()) galat(el, e, () => jalankan()); }
+  catch (e) {
+    if (window.TopBar) TopBar.done();
+    console.error(e);
+    if (!batal()) galat(el, e, () => jalankan());
+  }
 }
 
 window.addEventListener('hashchange', jalankan);

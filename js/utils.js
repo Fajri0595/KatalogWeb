@@ -326,3 +326,53 @@ function pratinjau(app, opsi) {
   return '<div class="pv ' + (opsi.besar ? 'big' : '') + '">' + inner + '</div>';
 }
 function inputWaktuSekarang() { return new Date().toISOString(); }
+
+// ---------- Top Loading Bar (Indikator Transisi Navigasi Cepat) ----------
+const TopBar = {
+  el: null,
+  timer: null,
+  prog: 0,
+  ensure() {
+    if (!this.el) {
+      let b = document.getElementById('top-loader');
+      if (!b) {
+        b = document.createElement('div');
+        b.id = 'top-loader';
+        document.body.appendChild(b);
+      }
+      this.el = b;
+    }
+    return this.el;
+  },
+  start() {
+    const el = this.ensure();
+    clearTimeout(this.timer);
+    this.prog = 20;
+    el.style.width = '20%';
+    el.classList.add('loading');
+    el.style.opacity = '1';
+    this.timer = setTimeout(() => {
+      this.prog = 65;
+      el.style.width = '65%';
+      this.timer = setTimeout(() => {
+        this.prog = 85;
+        el.style.width = '85%';
+      }, 180);
+    }, 80);
+  },
+  done() {
+    const el = this.ensure();
+    clearTimeout(this.timer);
+    this.prog = 100;
+    el.style.width = '100%';
+    this.timer = setTimeout(() => {
+      el.style.opacity = '0';
+      this.timer = setTimeout(() => {
+        el.classList.remove('loading');
+        el.style.width = '0%';
+        this.prog = 0;
+      }, 200);
+    }, 100);
+  }
+};
+window.TopBar = TopBar;
