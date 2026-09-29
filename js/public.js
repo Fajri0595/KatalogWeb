@@ -126,7 +126,6 @@ function kartuApp(a) {
       </div>
     </div></article>`;
 }
-function gambarKatalog() {
 function praMuatApp(id) {
   if (id && !S.detail[id]) {
     API.get('getApp', { id }).then((d) => { S.detail[id] = d; }).catch(() => {});
