@@ -48,7 +48,7 @@ async function keluarAdmin() {
   location.hash = '#/admin';
   if (location.hash === '#/admin') jalankan();
 }
-const ambil = async (aksi, data) => API.admin(aksi, data);
+const ambil = async (aksi, data, opsi) => API.admin(aksi, data, opsi);
 async function muatPesanan(paksa) {
   if (!Adm.orders || paksa) {
     const res = await ambil('adminGetOrders');
@@ -65,19 +65,20 @@ async function muatTestimoni(paksa) {
   }
   return Adm.tes;
 }
-async function muatAplikasi(paksa) {
+async function muatAplikasi(paksa, rendah) {
   if (!Adm.apps || paksa) {
-    const res = await ambil('adminGetApps');
+    const res = await ambil('adminGetApps', undefined, { low: !!rendah });
     Adm.apps = Array.isArray(res) ? res : (res && (res.apps || res.aplikasi || res.data || res.items)) || [];
   }
   return Adm.apps;
 }
 function praMuatAdmin() {
   if (!Sesi.ambil()) return;
-  // Pre-fetch seluruh tab admin di latar belakang (apps, setting, faq) agar saat tab diklik langsung 0ms
-  if (!Adm.apps) muatAplikasi(false).catch(() => {});
-  if (!Adm.setting) ambil('adminGetSettings').then((s) => { Adm.setting = s; }).catch(() => {});
-  if (!Adm.faq) ambil('adminGetFaq').then((f) => { Adm.faq = f; }).catch(() => {});
+  // Prefetch berprioritas RENDAH: baru jalan saat tidak ada permintaan lain, dan otomatis
+  // digabung/dinaikkan bila halaman yang dibuka memang membutuhkannya (tidak ada panggilan dobel).
+  if (!Adm.apps) muatAplikasi(false, true).catch(() => { });
+  if (!Adm.setting) ambil('adminGetSettings', undefined, { low: true }).then((s) => { Adm.setting = s; }).catch(() => { });
+  if (!Adm.faq) ambil('adminGetFaq', undefined, { low: true }).then((f) => { Adm.faq = f; }).catch(() => { });
 }
 function unduhCsv(nama, baris) {
   const sel = (v) => '"' + String(v === undefined || v === null ? '' : v).replace(/"/g, '""') + '"';

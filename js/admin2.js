@@ -219,8 +219,8 @@ async function admAplikasiForm(c) {
       bersih();
       bersihkanCachePublik();
       Adm.apps = null;
-      location.hash = '#/admin/aplikasi';
-      jalankan();
+      // hashchange sudah memanggil jalankan(); panggil manual hanya bila hash tidak berubah (hindari muat ganda)
+      if (location.hash === '#/admin/aplikasi') jalankan(); else location.hash = '#/admin/aplikasi';
     } catch (e) {
       toast(e.message, 'err', 6000);
     } finally {
