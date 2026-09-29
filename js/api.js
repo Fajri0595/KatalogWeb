@@ -346,7 +346,6 @@ const API = {
     if (action === 'adminSaveFaq') {
       try {
         const items = data.items || [];
-        // Hapus FAQ lama lalu simpan yang baru
         await sb.from('faq').delete().neq('id', 0);
         if (items.length > 0) {
           const barisFaq = items.map((f, i) => ({
@@ -355,13 +354,27 @@ const API = {
             jawaban: f.jawaban,
             urutan: i + 1
           }));
-          const { error: insErr } = await sb.from('faq').insert(barisFaq);
+          let { error: insErr } = await sb.from('faq').insert(barisFaq);
+          if (insErr && insErr.message && insErr.message.includes('kategori')) {
+            const barisTanpaKategori = items.map((f, i) => ({
+              pertanyaan: f.pertanyaan,
+              jawaban: f.jawaban,
+              urutan: i + 1
+            }));
+            const resRetry = await sb.from('faq').insert(barisTanpaKategori);
+            insErr = resRetry.error;
+          }
           if (insErr) throw new ApiError(insErr.message, 'FAQ_SAVE_ERROR');
         }
         return { success: true, pesan: 'FAQ berhasil diperbarui.' };
       } catch (err) {
         throw new ApiError(err.message || 'Gagal menyimpan FAQ.', 'FAQ_SAVE_ERROR');
       }
+    }
+
+    if (action === 'adminModerateTestimonial') {
+      await sb.from('testimoni').update({ is_aktif: data.aksi === 'setujui' }).eq('id', data.id);
+      return { success: true };
     }
 
     if (action === 'adminUploadMedia') {
