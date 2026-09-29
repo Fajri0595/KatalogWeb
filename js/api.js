@@ -377,7 +377,7 @@ const API = {
         const byteArray = new Uint8Array(byteNumbers);
         const blob = new Blob([byteArray], { type: mime });
 
-        const fileName = ${data.jenis || 'media'}/_.;
+        const fileName = (data.jenis || 'media') + '/' + Date.now() + '_' + Math.random().toString(36).substring(2, 8) + '.' + ext;
         const bucket = (window.APP_CONFIG && APP_CONFIG.STORAGE_BUCKET) || 'media';
         const uploadRes = await sb.storage.from(bucket).upload(fileName, blob, { contentType: mime });
         if (uploadRes.error) throw uploadRes.error;
