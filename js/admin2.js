@@ -9,8 +9,9 @@ const AdmA = { q: '', kat: 'Semua', status: 'Semua', hal: 1 };
 async function admAplikasi(c) {
   const el = c.el;
   if (!Adm.apps) el.innerHTML = skelAdmin(3);
-  const apps = await muatAplikasi(false);
+  const rawApps = await muatAplikasi(false);
   if (c.batal()) return;
+  const apps = Array.isArray(rawApps) ? rawApps : [];
   const kats = ['Semua'].concat(Array.from(new Set(apps.map((a) => a.kategori))));
   el.innerHTML = `<div class="page-h"><div><div class="eyebrow">Manajemen Produk</div><h1 class="h-lg" style="margin-top:4px">Daftar &amp; Kelola Aplikasi Web</h1><p>Atur etalase aplikasi, visibilitas status penjualan, pembaruan versi, dan konfigurasi harga produk.</p></div>
       <div class="acts"><button class="btn btn-secondary" id="segar">${icon('refresh')} Sinkronkan</button><a class="btn btn-primary" href="#/admin/aplikasi/baru">${icon('plus')} Tambah Aplikasi Baru</a></div></div>
@@ -45,7 +46,13 @@ async function admAplikasi(c) {
     $('#fot').innerHTML = `<span>Menampilkan <b style="color:var(--ink)">${daftar.length ? (AdmA.hal - 1) * per + 1 : 0}-${Math.min(daftar.length, AdmA.hal * per)}</b> dari <b style="color:var(--ink)">${daftar.length}</b> total item katalog</span><div class="pager" style="margin:0;padding:0;border:0"><div class="pg"><button data-h="${AdmA.hal - 1}" ${AdmA.hal <= 1 ? 'disabled' : ''}>${icon('chevron-left')}</button>${Array.from({ length: tot }, (_, i) => `<button class="${i + 1 === AdmA.hal ? 'on' : ''}" data-h="${i + 1}">${i + 1}</button>`).join('')}<button data-h="${AdmA.hal + 1}" ${AdmA.hal >= tot ? 'disabled' : ''}>${icon('chevron-right')}</button></div></div>`;
   }
   gambar();
-  $('#segar').addEventListener('click', async () => { await muatAplikasi(true); apps.length = 0; Adm.apps.forEach((a) => apps.push(a)); gambar(); toast('Katalog disegarkan.', 'ok', 2000); });
+  $('#segar').addEventListener('click', async () => {
+    const aBaru = await muatAplikasi(true);
+    apps.length = 0;
+    (Array.isArray(aBaru) ? aBaru : []).forEach((a) => apps.push(a));
+    gambar();
+    toast('Katalog disegarkan.', 'ok', 2000);
+  });
   $('#q').addEventListener('input', debounce((e) => { AdmA.q = e.target.value; AdmA.hal = 1; gambar(true); }, 200));
   $('#kat').addEventListener('change', (e) => { AdmA.kat = e.target.value; AdmA.hal = 1; gambar(true); });
   on(el, 'click', '[data-st]', (e, t) => { AdmA.status = t.dataset.st; AdmA.hal = 1; gambar(true); });
@@ -229,8 +236,9 @@ const AdmT = { tab: 'Menunggu', q: '' };
 async function admTestimoni(c) {
   const el = c.el;
   if (!Adm.tes) el.innerHTML = skelAdmin(3);
-  const tes = await muatTestimoni(false);
+  const rawTes = await muatTestimoni(false);
   if (c.batal()) return;
+  const tes = Array.isArray(rawTes) ? rawTes : [];
   el.innerHTML = `<div class="page-h"><div><div class="eyebrow">Moderasi Ulasan</div><h1 class="h-lg" style="margin-top:4px">Moderasi Testimoni &amp; Ulasan Pembeli</h1><p>Tinjau testimoni dari pembeli terverifikasi sebelum dipublikasikan ke halaman etalase publik.</p></div></div>
     <div class="stats c3">
       <div class="card stat" style="border-left:3px solid var(--warn)"><div class="lbl-mono">Menunggu Moderasi</div><div class="sv">${tes.filter((t) => t.status === 'Menunggu').length}<small>ulasan</small></div></div>

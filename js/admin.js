@@ -49,9 +49,29 @@ async function keluarAdmin() {
   if (location.hash === '#/admin') jalankan();
 }
 const ambil = async (aksi, data) => API.admin(aksi, data);
-async function muatPesanan(paksa) { if (!Adm.orders || paksa) { Adm.orders = await ambil('adminGetOrders'); perbaruiBadge(); } return Adm.orders; }
-async function muatTestimoni(paksa) { if (!Adm.tes || paksa) { Adm.tes = await ambil('adminGetTestimonials'); perbaruiBadge(); } return Adm.tes; }
-async function muatAplikasi(paksa) { if (!Adm.apps || paksa) Adm.apps = await ambil('adminGetApps'); return Adm.apps; }
+async function muatPesanan(paksa) {
+  if (!Adm.orders || paksa) {
+    const res = await ambil('adminGetOrders');
+    Adm.orders = Array.isArray(res) ? res : (res && (res.orders || res.pesanan || res.data || res.items)) || [];
+    perbaruiBadge();
+  }
+  return Adm.orders;
+}
+async function muatTestimoni(paksa) {
+  if (!Adm.tes || paksa) {
+    const res = await ambil('adminGetTestimonials');
+    Adm.tes = Array.isArray(res) ? res : (res && (res.testimoni || res.testimonials || res.data || res.items)) || [];
+    perbaruiBadge();
+  }
+  return Adm.tes;
+}
+async function muatAplikasi(paksa) {
+  if (!Adm.apps || paksa) {
+    const res = await ambil('adminGetApps');
+    Adm.apps = Array.isArray(res) ? res : (res && (res.apps || res.aplikasi || res.data || res.items)) || [];
+  }
+  return Adm.apps;
+}
 function praMuatAdmin() {
   if (!Sesi.ambil()) return;
   // Pre-fetch seluruh tab admin di latar belakang (apps, setting, faq) agar saat tab diklik langsung 0ms
@@ -283,8 +303,9 @@ async function muatBukti(o) {
 async function admPesanan(c) {
   const el = c.el;
   if (!Adm.orders) el.innerHTML = skelAdmin(1);
-  const orders = await muatPesanan(false);
+  const rawOrders = await muatPesanan(false);
   if (c.batal()) return;
+  const orders = Array.isArray(rawOrders) ? rawOrders : [];
   if (c.query.kode) { Adm.sel = c.query.kode; const o = orders.find((x) => x.kode === c.query.kode); if (o) Adm.tab = o.status === 'Menunggu Verifikasi' ? 'menunggu' : o.status === 'Disetujui' ? 'disetujui' : 'ditolak'; }
   if (c.query.tab) Adm.tab = c.query.tab;
   Adm.hal = 1;
