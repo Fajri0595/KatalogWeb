@@ -1,1 +1,80 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none"><rect width="64" height="64" rx="14" fill="#0F172A"/><path d="M18 22l12 10-12 10" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M34 44h14" stroke="#fff" stroke-width="5" stroke-linecap="round"/><circle cx="46" cy="20" r="4" fill="#818CF8"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="kw-bg" x1="0" y1="0" x2="128" y2="128" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0B0F19"/>
+      <stop offset="50%" stop-color="#0F172A"/>
+      <stop offset="100%" stop-color="#1E1B4B"/>
+    </linearGradient>
+
+    <!-- Outer Rim Specular Highlight -->
+    <linearGradient id="kw-rim" x1="0" y1="0" x2="128" y2="128" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#38BDF8" stop-opacity="0.6"/>
+      <stop offset="45%" stop-color="#818CF8" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#C084FC" stop-opacity="0.45"/>
+    </linearGradient>
+
+    <!-- Ambient Core Glow -->
+    <radialGradient id="kw-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#6366F1" stop-opacity="0.45"/>
+      <stop offset="60%" stop-color="#4F46E5" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#0F172A" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Left Pillar Gradient (Web Framework / Dock) -->
+    <linearGradient id="kw-pillar" x1="30" y1="26" x2="30" y2="102" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="45%" stop-color="#6366F1"/>
+      <stop offset="100%" stop-color="#4338CA"/>
+    </linearGradient>
+
+    <!-- Top Wing Gradient (Chevron / Trajectory) -->
+    <linearGradient id="kw-topwing" x1="52" y1="64" x2="98" y2="30" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#6366F1"/>
+      <stop offset="55%" stop-color="#818CF8"/>
+      <stop offset="100%" stop-color="#38BDF8"/>
+    </linearGradient>
+
+    <!-- Bottom Wing Gradient (Catalog Stack / Foundation) -->
+    <linearGradient id="kw-botwing" x1="52" y1="64" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#4F46E5"/>
+      <stop offset="50%" stop-color="#8B5CF6"/>
+      <stop offset="100%" stop-color="#EC4899"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Container Squircle with Multi-layer Shadow/Border -->
+  <rect x="4" y="4" width="120" height="120" rx="28" fill="url(#kw-bg)" stroke="url(#kw-rim)" stroke-width="2"/>
+  
+  <!-- Subtle Interior Grid Texture -->
+  <path d="M4 64h120M64 4v120" stroke="rgba(255,255,255,0.025)" stroke-width="1"/>
+
+  <!-- Ambient Light Bloom -->
+  <circle cx="64" cy="64" r="44" fill="url(#kw-glow)"/>
+
+  <!-- Left Pillar / "K" Stem & App Dock -->
+  <rect x="30" y="26" width="16" height="76" rx="8" fill="url(#kw-pillar)"/>
+  <!-- Specular Sheen on Pillar -->
+  <rect x="32.5" y="29" width="3.5" height="28" rx="1.75" fill="#FFFFFF" opacity="0.45"/>
+  <!-- Bottom Micro Accent -->
+  <circle cx="38" cy="94" r="2.5" fill="#A5B4FC" opacity="0.8"/>
+
+  <!-- Top Wing: Modern Chevron Wing -->
+  <path d="M 52 63 L 88 31 C 91.5 28 97 30.5 97 35.5 V 42 C 97 44.5 95.8 46.8 93.6 48.2 L 69 68 C 66.5 70 62.5 68.2 62.5 65 Z" fill="url(#kw-topwing)"/>
+  <!-- Top Wing Glass Highlight -->
+  <path d="M 56 61 L 89 33.5 C 91 32 94 33 94 35.5" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/>
+
+  <!-- Bottom Wing: Dynamic Catalog Tier -->
+  <path d="M 52 65 L 89 97 C 92 99.5 96.8 99 99 95.5 C 100.5 93 100 89.8 98 87.8 L 73 63.5 C 70.5 61 66 62.5 66 66 Z" fill="url(#kw-botwing)"/>
+  <!-- Bottom Wing Specular Line -->
+  <path d="M 56 68 L 92 98" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round" opacity="0.25"/>
+
+  <!-- Central Core Spark / Node -->
+  <circle cx="59" cy="64" r="9" fill="#38BDF8" opacity="0.35"/>
+  <circle cx="59" cy="64" r="5" fill="#FFFFFF"/>
+  <circle cx="59" cy="64" r="2" fill="#38BDF8"/>
+
+  <!-- Tech Accent Particles -->
+  <circle cx="86" cy="64" r="2.5" fill="#38BDF8" opacity="0.85"/>
+  <circle cx="48" cy="40" r="2" fill="#C084FC" opacity="0.75"/>
+</svg>

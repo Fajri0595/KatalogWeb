@@ -16,7 +16,7 @@ function layoutAdmin(aktif, judul) {
   if (root.dataset.layout !== 'admin') {
     root.dataset.layout = 'admin';
     root.innerHTML = `<div class="adm" id="adm">
-      <aside class="sb" id="sb"><div class="sb-brand"><img src="assets/logo.svg" alt=""><div><b id="sb-nama">Katalog Web</b><small>Konsol Administrasi</small></div></div>
+      <aside class="sb" id="sb"><div class="sb-brand"><img src="assets/logo.svg" alt="Logo Katalog Web" width="32" height="32"><div><b id="sb-nama">Katalog Web</b><small>Konsol Administrasi</small></div></div>
         <div class="sb-lbl">Menu Utama</div>
         <nav>${NAV_ADMIN.map((n) => `<a href="${n.h}" data-k="${n.k}">${icon(n.i)}<span>${n.t}</span>${n.badge ? `<span class="badge-n hide" data-badge="${n.badge}">0</span>` : ''}</a>`).join('')}</nav>
         <div class="sb-foot"><a href="#/">${icon('arrow-left')} Kembali ke Publik</a><button id="keluar">${icon('log-out')} Keluar</button><small id="sb-email"></small></div></aside>
@@ -122,7 +122,7 @@ function renderMasuk(c) {
   document.title = 'Masuk Admin — ' + (S.pengaturan.nama_toko || APP_CONFIG.NAMA_DEFAULT);
   root.innerHTML = `<div class="login-wrap"><div style="width:100%;max-width:440px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><a href="#/" class="t-sm" style="display:inline-flex;gap:6px;align-items:center;color:var(--muted)">${icon('arrow-left')} Kembali ke Katalog Publik</a></div>
-    <div class="card login-card"><img class="login-logo" src="assets/logo.svg" alt="" style="display:block">
+    <div class="card login-card"><img class="login-logo" src="assets/logo.svg" alt="Logo Katalog Web" width="56" height="56" style="display:block">
       <div style="text-align:center;margin-bottom:24px"><span class="pill pill-indigo nodot" style="margin-bottom:12px">${icon('shield')} Area Khusus Administrator</span><h1 class="h-lg" style="margin-top:8px">Masuk Portal Admin</h1><p class="muted" style="margin-top:6px">Masukkan email dan kata sandi untuk mengelola katalog, verifikasi pesanan, dan laporan.</p></div>
       <form id="flogin" novalidate><div id="lerr"></div>
         <div class="field"><label for="le">Email Administrator</label><div class="ig">${icon('at')}<input class="input" id="le" type="email" autocomplete="username" required></div></div>

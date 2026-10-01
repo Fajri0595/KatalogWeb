@@ -1,1 +1,56 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none"><rect width="64" height="64" rx="14" fill="#0F172A"/><path d="M18 22l12 10-12 10" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M34 44h14" stroke="#fff" stroke-width="5" stroke-linecap="round"/><circle cx="46" cy="20" r="4" fill="#818CF8"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+  <defs>
+    <!-- Background Gradient for Favicon -->
+    <linearGradient id="fav-bg" x1="0" y1="0" x2="128" y2="128" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0B0F19"/>
+      <stop offset="50%" stop-color="#0F172A"/>
+      <stop offset="100%" stop-color="#1E1B4B"/>
+    </linearGradient>
+
+    <!-- Outer Rim Specular Highlight -->
+    <linearGradient id="fav-rim" x1="0" y1="0" x2="128" y2="128" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#38BDF8" stop-opacity="0.8"/>
+      <stop offset="50%" stop-color="#818CF8" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#C084FC" stop-opacity="0.6"/>
+    </linearGradient>
+
+    <!-- Left Pillar Gradient -->
+    <linearGradient id="fav-pillar" x1="30" y1="26" x2="30" y2="102" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="45%" stop-color="#6366F1"/>
+      <stop offset="100%" stop-color="#4338CA"/>
+    </linearGradient>
+
+    <!-- Top Wing Gradient -->
+    <linearGradient id="fav-topwing" x1="52" y1="64" x2="98" y2="30" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#6366F1"/>
+      <stop offset="55%" stop-color="#818CF8"/>
+      <stop offset="100%" stop-color="#38BDF8"/>
+    </linearGradient>
+
+    <!-- Bottom Wing Gradient -->
+    <linearGradient id="fav-botwing" x1="52" y1="64" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#4F46E5"/>
+      <stop offset="50%" stop-color="#8B5CF6"/>
+      <stop offset="100%" stop-color="#EC4899"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Container Squircle -->
+  <rect x="4" y="4" width="120" height="120" rx="28" fill="url(#fav-bg)" stroke="url(#fav-rim)" stroke-width="2.5"/>
+
+  <!-- Left Pillar / "K" Stem -->
+  <rect x="29" y="25" width="18" height="78" rx="9" fill="url(#fav-pillar)"/>
+  <rect x="32" y="28" width="4" height="30" rx="2" fill="#FFFFFF" opacity="0.5"/>
+
+  <!-- Top Wing -->
+  <path d="M 52 63 L 88 31 C 91.5 28 97 30.5 97 35.5 V 42 C 97 44.5 95.8 46.8 93.6 48.2 L 69 68 C 66.5 70 62.5 68.2 62.5 65 Z" fill="url(#fav-topwing)"/>
+
+  <!-- Bottom Wing -->
+  <path d="M 52 65 L 89 97 C 92 99.5 96.8 99 99 95.5 C 100.5 93 100 89.8 98 87.8 L 73 63.5 C 70.5 61 66 62.5 66 66 Z" fill="url(#fav-botwing)"/>
+
+  <!-- Glowing Central Node -->
+  <circle cx="59" cy="64" r="10" fill="#38BDF8" opacity="0.4"/>
+  <circle cx="59" cy="64" r="6" fill="#FFFFFF"/>
+  <circle cx="59" cy="64" r="2.5" fill="#38BDF8"/>
+</svg>

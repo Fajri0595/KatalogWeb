@@ -14,7 +14,7 @@ js/charts.js         ← grafik SVG ringan untuk dashboard admin
 js/public.js         ← seluruh halaman publik (katalog, detail, pemesanan, status, testimoni, bantuan)
 js/admin.js          ← shell admin, login, dashboard, verifikasi pembayaran
 js/admin2.js         ← kelola aplikasi, moderasi testimoni, pengaturan sistem
-assets/              ← logo & favicon SVG
+assets/              ← logo & favicon lengkap (SVG, PNG multi-ukuran, ICO, webmanifest)
 ```
 
 ## Sebelum online

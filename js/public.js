@@ -24,7 +24,7 @@ function layoutPublik(aktif) {
     root.innerHTML = `
       <header class="nav"><div class="container nav-in">
         <button class="btn btn-ghost btn-icon burger" id="burger" aria-label="Menu">${icon('menu')}</button>
-        <a class="brand" href="#/"><img src="assets/logo.svg" alt=""><span id="brand-nama"></span></a>
+        <a class="brand" href="#/"><img src="assets/logo.svg" alt="Logo Katalog Web" width="34" height="34"><span id="brand-nama"></span></a>
         <nav class="nav-links" id="navlinks">
           <a href="#/" data-nav="katalog">Katalog</a>
           <a href="#/status" data-nav="status">Cek Status Pesanan</a>
@@ -44,7 +44,7 @@ function layoutPublik(aktif) {
   const waKontak = set('whatsapp');
   $('#footer').innerHTML = `<div class="container">
     <div class="foot-grid">
-      <div><a class="brand" href="#/"><img src="assets/logo.svg" alt="">${esc(set('nama_toko', APP_CONFIG.NAMA_DEFAULT))}</a>
+      <div><a class="brand" href="#/"><img src="assets/logo.svg" alt="Logo Katalog Web" width="34" height="34">${esc(set('nama_toko', APP_CONFIG.NAMA_DEFAULT))}</a>
         <p class="muted" style="margin-top:12px;max-width:340px">${esc(set('tagline'))}</p></div>
       <div><h5>Tautan Cepat</h5><ul><li><a href="#/">Katalog</a></li><li><a href="#/bantuan">Panduan &amp; FAQ</a></li><li><a href="#/status">Cek Status</a></li><li><a href="#/testimoni">Kirim Testimoni</a></li></ul></div>
       <div><h5>Hubungi Kami</h5><p class="muted">Kontak Developer:</p>
@@ -764,7 +764,7 @@ async function pgTandaTerima(c) {
       <button class="btn btn-secondary btn-sm" id="cetak">${icon('printer')} Cetak Dokumen</button><button class="btn btn-secondary btn-sm" id="pdf">${icon('download')} Unduh PDF</button>${k.link_akses ? `<a class="btn btn-accent btn-sm" href="${esc(urlAman(k.link_akses))}" target="_blank" rel="noopener noreferrer">${icon('external-link')} Buka Tautan Akses</a>` : ''}</div></div>
     <div class="container"><article class="receipt">
       <div style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;padding-bottom:20px;border-bottom:1px solid var(--line)">
-        <div style="display:flex;gap:12px;align-items:center"><img src="assets/logo.svg" width="48" height="48" alt="" style="border-radius:12px"><div><div class="h-sm">${esc(r.toko.nama)}</div><div class="muted t-sm">${esc(r.toko.kota)}${r.toko.email ? ' • ' + esc(r.toko.email) : ''}</div></div></div>
+        <div style="display:flex;gap:12px;align-items:center"><img src="assets/logo.svg" width="48" height="48" alt="Logo ${esc(r.toko.nama)}" style="border-radius:12px;box-shadow:0 4px 12px rgba(15,23,42,0.15)"><div><div class="h-sm">${esc(r.toko.nama)}</div><div class="muted t-sm">${esc(r.toko.kota)}${r.toko.email ? ' • ' + esc(r.toko.email) : ''}</div></div></div>
         <div style="text-align:right"><div class="eyebrow">Tanda Terima Pembayaran Resmi</div><div class="h-md mono" style="margin:4px 0">${esc(r.nomor_invoice)}</div><span class="pill pill-ok">LUNAS / VERIFIED</span></div></div>
       <div class="row c2" style="margin:20px 0"><div style="background:var(--alt);padding:16px;border-radius:12px"><div class="lbl-mono">Diterbitkan Untuk</div><div class="h-sm" style="margin:6px 0 2px">${esc(r.pembeli.nama)}</div><div class="muted t-sm">${icon('mail')} ${esc(r.pembeli.email)}</div><div class="hint" style="margin-top:12px">ID Referensi Pesanan:</div><div class="mono" style="color:var(--indigo);font-size:13px">${esc(r.kode)}</div></div>
         <div style="background:var(--alt);padding:16px;border-radius:12px"><div class="lbl-mono">Detail Transaksi</div><div class="kv" style="padding:6px 0;border:0"><span>Tanggal Pesan</span><span class="mono" style="font-size:12px">${esc(tgl(r.tanggal_pesan, true))}</span></div><div class="kv" style="padding:6px 0;border:0"><span>Tanggal Verifikasi</span><span class="mono" style="font-size:12px">${esc(tgl(r.tanggal_verifikasi, true))}</span></div><div class="kv" style="padding:6px 0;border:0"><span>Metode Bayar</span><span>${esc(r.metode)}</span></div><div class="hint" style="text-align:right">${esc(r.rekening)}</div></div></div>
