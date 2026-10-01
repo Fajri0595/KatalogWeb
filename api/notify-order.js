@@ -22,24 +22,24 @@ module.exports = async (req, res) => {
         }
       });
 
-      const emailHtml = 
+      const emailHtml = `
         <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 8px;">
-          <h2 style="color: #0F172A;">Konfirmasi Pesanan - </h2>
-          <p>Halo <b></b>,</p>
+          <h2 style="color: #0F172A;">Konfirmasi Pesanan - ${pesanan.nama_pemesan || 'Pelanggan'}</h2>
+          <p>Halo <b>${pesanan.nama_pemesan || ''}</b>,</p>
           <p>Terima kasih! Pesanan Anda telah kami terima dan saat ini sedang menunggu verifikasi pembayaran.</p>
           <hr style="border: none; border-top: 1px solid #eee; margin: 15px 0;">
-          <p><b>Nomor Pesanan:</b> </p>
-          <p><b>Total Pembayaran:</b> Rp </p>
-          <p><b>Status:</b> </p>
+          <p><b>Nomor Pesanan:</b> ${pesanan.id || pesanan.kode || '-'}</p>
+          <p><b>Total Pembayaran:</b> Rp ${(Number(pesanan.total_harga) || 0).toLocaleString('id-ID')}</p>
+          <p><b>Status:</b> ${pesanan.status || 'Menunggu Verifikasi'}</p>
           <hr style="border: none; border-top: 1px solid #eee; margin: 15px 0;">
           <p style="font-size: 13px; color: #64748B;">Admin akan memproses pesanan Anda secepatnya. Anda juga dapat mengecek status pesanan melalui menu Cek Status Pesanan di website.</p>
         </div>
-      ;
+      `;
 
       await transporter.sendMail({
-        from: "" <>,
+        from: `"Katalog Web" <${process.env.SMTP_USER}>`,
         to: pesanan.email,
-        subject: [] Pesanan Anda Sedang Diproses,
+        subject: `[${pesanan.id || pesanan.kode || 'Pesanan'}] Pesanan Anda Sedang Diproses`,
         html: emailHtml
       });
     }

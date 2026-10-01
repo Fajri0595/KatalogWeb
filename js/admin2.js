@@ -296,6 +296,18 @@ async function admTestimoni(c) {
 // PENGATURAN SISTEM
 // ============================================================
 const TAB_VAR = ['kode_pesanan', 'nama_pembeli', 'email_pembeli', 'nama_aplikasi', 'versi', 'total_nominal', 'link_status', 'link_akses_privat', 'link_video_tutorial', 'token_lisensi', 'alasan_penolakan', 'wa_pembeli', 'link_admin', 'rating', 'isi_testimoni', 'nama_toko', 'whatsapp', 'sla'];
+const DEFAULT_EMAIL_TEMPLATES = {
+  email_1_subjek: '[Menunggu Pembayaran] Pesanan {nama_aplikasi} ({kode_pesanan})',
+  email_1_isi: 'Halo {nama_pembeli},\n\nTerima kasih telah memesan {nama_aplikasi} (v{versi}) di {nama_toko}.\n\nDetail Pesanan:\n- Nomor Pesanan: {kode_pesanan}\n- Total Tagihan: {total_nominal}\n- Estimasi Verifikasi: {sla}\n\nSilakan lakukan transfer sesuai nominal ke rekening kami dan pastikan bukti transfer sudah diunggah. Anda dapat memantau status pesanan kapan saja melalui tautan berikut:\n{link_status}\n\nJika ada pertanyaan, jangan ragu untuk menghubungi kami via WhatsApp: {whatsapp}.\n\nSalam hangat,\n{nama_toko}',
+  email_2_subjek: '[Pesanan Selesai] Akses & Lisensi {nama_aplikasi} ({kode_pesanan})',
+  email_2_isi: 'Halo {nama_pembeli},\n\nKabar baik! Pembayaran untuk pesanan {kode_pesanan} telah kami verifikasi dan disetujui.\n\nDetail Akses Produk:\n- Nama Produk: {nama_aplikasi} (v{versi})\n- Token Lisensi: {token_lisensi}\n- Link Akses/Repository: {link_akses_privat}\n- Tutorial & Dokumentasi: {link_video_tutorial}\n\nStatus pesanan dan detail invoice resmi dapat dilihat di:\n{link_status}\n\nTerima kasih atas kepercayaan Anda bertransaksi di {nama_toko}. Selamat berkarya!\n\nWhatsApp Bantuan: {whatsapp}\n{nama_toko}',
+  email_3_subjek: '[Verifikasi Tertunda] Informasi Pesanan {kode_pesanan}',
+  email_3_isi: 'Halo {nama_pembeli},\n\nMohon maaf, pembayaran untuk pesanan {kode_pesanan} ({nama_aplikasi}) belum dapat kami setujui karena:\n\n{alasan_penolakan}\n\nSilakan periksa kembali bukti transfer dan lakukan konfirmasi ulang atau unggah bukti valid melalui tautan:\n{link_status}\n\nJika Anda membutuhkan bantuan segera, hubungi tim support kami via WhatsApp di {whatsapp}.\n\nSalam,\n{nama_toko}',
+  email_4_subjek: '[Pesanan Baru] {kode_pesanan} - {nama_pembeli} ({total_nominal})',
+  email_4_isi: 'Halo Admin {nama_toko},\n\nPesanan baru telah masuk ke dalam sistem!\n\nDetail Pesanan:\n- Kode: {kode_pesanan}\n- Pembeli: {nama_pembeli} ({email_pembeli} / {wa_pembeli})\n- Produk: {nama_aplikasi} (v{versi})\n- Total Nominal: {total_nominal}\n\nSegera cek bukti transfer dan lakukan verifikasi di dashboard admin:\n{link_admin}\n\nSistem Notifikasi {nama_toko}',
+  email_5_subjek: '[Testimoni Baru] Rating {rating} dari {nama_pembeli}',
+  email_5_isi: 'Halo Admin {nama_toko},\n\nTestimoni baru telah dikirimkan oleh pembeli!\n\nDetail Testimoni:\n- Pembeli: {nama_pembeli}\n- Produk: {nama_aplikasi}\n- Rating: {rating}\n- Ulasan: "{isi_testimoni}"\n\nSilakan moderasi testimoni ini melalui Dashboard Admin agar dapat tampil di halaman publik:\n{link_admin}\n\nSistem Notifikasi {nama_toko}'
+};
 const AdmP = { tab: 'rekening', tpl: '1' };
 async function admPengaturan(c) {
   const el = c.el;
@@ -311,6 +323,20 @@ async function admPengaturan(c) {
   Adm.faq = faqData;
   const V = Object.assign({}, d.nilai);
   if (!V.whatsapp || /0000-0000|1234567890/i.test(V.whatsapp)) V.whatsapp = (window.APP_CONFIG && APP_CONFIG.WHATSAPP_DEFAULT) || '085655860383';
+  if (!V.nama_toko) V.nama_toko = (window.APP_CONFIG && APP_CONFIG.NAMA_DEFAULT) || 'Katalog Aplikasi Web';
+
+  // Pastikan seluruh 5 template email ada nilainya di V
+  for (let i = 1; i <= 5; i++) {
+    const ks = 'email_' + i + '_subjek';
+    const ki = 'email_' + i + '_isi';
+    if (V[ks] === undefined || V[ks] === null || V[ks] === '') {
+      V[ks] = (d.template_bawaan && d.template_bawaan[ks]) || DEFAULT_EMAIL_TEMPLATES[ks] || '';
+    }
+    if (V[ki] === undefined || V[ki] === null || V[ki] === '') {
+      V[ki] = (d.template_bawaan && d.template_bawaan[ki]) || DEFAULT_EMAIL_TEMPLATES[ki] || '';
+    }
+  }
+
   let faq = JSON.parse(JSON.stringify(faqData));
   let kotor = false;
   let faqKotor = false;
@@ -493,19 +519,33 @@ async function admPengaturan(c) {
   }
   function panelEmail() {
     return `<div class="row row-email"><div class="card card-p">
-      <select class="select" id="tplpilih">${[['1', 'Pesanan Diterima (ke Pembeli)'], ['2', 'Pembayaran Disetujui (ke Pembeli)'], ['3', 'Pembayaran Ditolak (ke Pembeli)'], ['4', 'Notifikasi Pesanan Baru (ke Admin)'], ['5', 'Notifikasi Testimoni Baru (ke Admin)']].map((t) => `<option value="${t[0]}" ${AdmP.tpl === t[0] ? 'selected' : ''}>${t[1]}</option>`).join('')}</select>
+      <div class="field" style="margin-bottom:12px"><label for="tplpilih">Pilih Template Email</label><select class="select" id="tplpilih">${[['1', 'Pesanan Diterima (ke Pembeli)'], ['2', 'Pembayaran Disetujui (ke Pembeli)'], ['3', 'Pembayaran Ditolak (ke Pembeli)'], ['4', 'Notifikasi Pesanan Baru (ke Admin)'], ['5', 'Notifikasi Testimoni Baru (ke Admin)']].map((t) => `<option value="${t[0]}" ${AdmP.tpl === t[0] ? 'selected' : ''}>${t[1]}</option>`).join('')}</select></div>
       <div class="field" style="margin-top:16px"><label for="tsubj">Subjek Email</label><input class="input" id="tsubj"></div>
       <div class="vars">${TAB_VAR.map((v) => `<button type="button" data-var="{${v}}">{${v}}</button>`).join('')}</div>
       <div class="field" style="margin-bottom:8px"><label for="tbody">Isi Pesan</label><textarea class="textarea" id="tbody" rows="12"></textarea></div>
-      <button class="btn btn-ghost btn-sm" id="tplreset">${icon('refresh')} Kembalikan ke Bawaan</button></div>
-      <div><div class="lbl-mono" style="margin-bottom:8px">Pratinjau Nyata (Live Preview)</div><div class="mailprev"><div class="mh"><div>Dari: <b>${esc(V.nama_toko)}</b></div><div>Kepada: <b>nama@email.com</b></div><div>Subjek: <b id="pv-subj"></b></div></div><div class="mb" id="pv-body"></div></div></div></div>`;
+      <button class="btn btn-ghost btn-sm" id="tplreset" type="button">${icon('refresh')} Kembalikan ke Bawaan</button></div>
+      <div><div class="lbl-mono" style="margin-bottom:8px">Pratinjau Nyata (Live Preview)</div><div class="mailprev"><div class="mh"><div>Dari: <b id="pv-from">${esc(V.nama_toko || 'Katalog Aplikasi Web')}</b></div><div>Kepada: <b id="pv-to">nama@email.com</b></div><div>Subjek: <b id="pv-subj"></b></div></div><div class="mb" id="pv-body"></div></div></div></div>`;
   }
   function panelIntegrasi() {
     return `<div class="row c2">
-      <div class="card card-p"><div class="sec-title" style="margin-bottom:12px">${icon('database')} Google Sheets Database</div><a class="btn btn-secondary btn-block" href="${esc(d.integrasi.spreadsheet_url)}" target="_blank" rel="noopener noreferrer">${icon('external-link')} Buka Spreadsheet</a></div>
-      <div class="card card-p"><div class="sec-title" style="margin-bottom:12px">${icon('folder')} Folder Google Drive</div><div style="display:flex;flex-direction:column;gap:8px">${d.integrasi.folder.map((f) => `<a class="btn btn-secondary btn-sm" style="justify-content:flex-start" href="${esc(f.url)}" target="_blank" rel="noopener noreferrer">${icon('external-link')} ${esc(f.nama)}</a>`).join('')}</div></div>
+      <div class="card card-p"><div class="sec-title" style="margin-bottom:12px">${icon('database')} Database Supabase</div><a class="btn btn-secondary btn-block" href="${esc(d.integrasi.spreadsheet_url)}" target="_blank" rel="noopener noreferrer">${icon('external-link')} Buka Dashboard Supabase</a></div>
+      <div class="card card-p"><div class="sec-title" style="margin-bottom:12px">${icon('folder')} Cloud Storage &amp; Hosting</div><div style="display:flex;flex-direction:column;gap:8px">${d.integrasi.folder.map((f) => `<a class="btn btn-secondary btn-sm" style="justify-content:flex-start" href="${esc(f.url)}" target="_blank" rel="noopener noreferrer">${icon('external-link')} ${esc(f.nama)}</a>`).join('')}</div></div>
       <div class="card card-p"><div class="sec-title" style="margin-bottom:12px">${icon('mail')} Kuota &amp; Pengiriman</div><div class="kv"><span>Sisa kuota email hari ini</span><span>${d.integrasi.kuota_email_sisa === null ? '-' : d.integrasi.kuota_email_sisa}</span></div><div class="kv"><span>Email login admin</span><span class="mono">${esc(d.integrasi.email_login || '-')}</span></div></div>
       <div class="card card-p"><div class="sec-title" style="margin-bottom:12px">${icon('key')} Kata Sandi Admin</div><button class="btn btn-secondary btn-block" id="ubahsandi">${icon('lock')} Ubah Kata Sandi</button></div></div>`;
+  }
+  function perbaruiPreviewBank() {
+    const bn = $('.bank-card .bn', el); if (bn) bn.textContent = V.bank_nama || '-';
+    const no = $('.bank-card .no', el); if (no) no.textContent = V.bank_nomor || '-';
+    const an = $('.bank-card .an', el); if (an) an.textContent = V.bank_atas_nama || '-';
+    const topBn = $('.int-card b', el); if (topBn) topBn.textContent = V.bank_nama || '-';
+  }
+  function simpanEmailAktif() {
+    const kSubj = 'email_' + AdmP.tpl + '_subjek';
+    const kIsi = 'email_' + AdmP.tpl + '_isi';
+    const sEl = $('#tsubj');
+    const bEl = $('#tbody');
+    if (sEl) V[kSubj] = sEl.value;
+    if (bEl) V[kIsi] = bEl.value;
   }
   function gambarPanel(hanyaPanel) {
     if (!hanyaPanel) {
@@ -518,31 +558,133 @@ async function admPengaturan(c) {
     pnl.classList.remove('tab-enter');
     void pnl.offsetWidth;
     pnl.classList.add('tab-enter');
-    $$('#panel input,#panel textarea,#panel select', el).forEach((i) => i.addEventListener('input', () => { simpanField(i); tandai(); }));
+    $$('#panel input,#panel textarea,#panel select', el).forEach((i) => {
+      i.addEventListener('input', () => { simpanField(i); tandai(); });
+      i.addEventListener('change', () => { simpanField(i); tandai(); });
+    });
     if (AdmP.tab === 'kupon') {
       gambarKupon();
       const addBtn = $('#addkupon');
       if (addBtn) addBtn.addEventListener('click', () => modalKupon());
     }
-    if (AdmP.tab === 'faq') { gambarFaq(); $('#addfaq').addEventListener('click', () => { faq.push({ kategori: 'Umum', pertanyaan: '', jawaban: '' }); gambarFaq(); tandaiFaq(); }); }
+    if (AdmP.tab === 'faq') {
+      gambarFaq();
+      const addFaq = $('#addfaq');
+      if (addFaq) addFaq.addEventListener('click', () => { faq.push({ kategori: 'Umum', pertanyaan: '', jawaban: '' }); gambarFaq(); tandaiFaq(); });
+    }
     if (AdmP.tab === 'email') ikatEmail();
     if (AdmP.tab === 'integrasi') { const b = $('#ubahsandi'); if (b) b.addEventListener('click', gantiSandiModal); }
   }
-  function simpanField(input) { const k = input.id.replace(/^p_/, ''); if (k && k !== input.id) V[k] = input.value; }
+  function simpanField(input) {
+    const k = input.id.replace(/^p_/, '');
+    if (k && k !== input.id) {
+      V[k] = input.value;
+      if (k.startsWith('bank_')) {
+        perbaruiPreviewBank();
+      }
+    }
+  }
   function muatTpl() {
-    $('#tsubj').value = V['email_' + AdmP.tpl + '_subjek'] || ''; $('#tbody').value = V['email_' + AdmP.tpl + '_isi'] || ''; pratinjauEmail();
+    const kSubj = 'email_' + AdmP.tpl + '_subjek';
+    const kIsi = 'email_' + AdmP.tpl + '_isi';
+    const bawaanSubj = (d.template_bawaan && d.template_bawaan[kSubj]) || DEFAULT_EMAIL_TEMPLATES[kSubj] || '';
+    const bawaanIsi = (d.template_bawaan && d.template_bawaan[kIsi]) || DEFAULT_EMAIL_TEMPLATES[kIsi] || '';
+
+    if (V[kSubj] === undefined || V[kSubj] === null || V[kSubj] === '') V[kSubj] = bawaanSubj;
+    if (V[kIsi] === undefined || V[kIsi] === null || V[kIsi] === '') V[kIsi] = bawaanIsi;
+
+    const sEl = $('#tsubj');
+    const bEl = $('#tbody');
+    if (sEl) sEl.value = V[kSubj];
+    if (bEl) bEl.value = V[kIsi];
+    pratinjauEmail();
   }
   function pratinjauEmail() {
-    const contoh = { kode_pesanan: 'ORD-20260924-001', nama_pembeli: 'Budi Santoso', email_pembeli: 'budi.santoso@gmail.com', nama_aplikasi: 'Sistem Manajemen Inventaris Toko', versi: '2.1', total_nominal: 'Rp 150.000', link_status: (V.url_situs || 'https://contoh.github.io/katalog/') + '#/status?kode=ORD-20260924-001', link_akses_privat: 'https://github.com/anda/repo-privat', link_video_tutorial: 'https://youtu.be/contoh', token_lisensi: 'LIC-2026-AB12-CD34', alasan_penolakan: 'Nominal transfer kurang Rp 5.000.', wa_pembeli: '0812-3456-7890', link_admin: '#/admin/pesanan', rating: '5/5', isi_testimoni: 'Sangat membantu operasional toko kami.', nama_toko: V.nama_toko, whatsapp: V.whatsapp, sla: V.sla_verifikasi };
+    const contoh = {
+      kode_pesanan: 'ORD-20260924-001',
+      nama_pembeli: 'Budi Santoso',
+      email_pembeli: 'budi.santoso@gmail.com',
+      nama_aplikasi: 'Sistem Manajemen Inventaris Toko',
+      versi: '2.1',
+      total_nominal: 'Rp 150.000',
+      link_status: (V.url_situs || 'https://contoh.github.io/katalog/') + '#/status?kode=ORD-20260924-001',
+      link_akses_privat: 'https://github.com/anda/repo-privat',
+      link_video_tutorial: 'https://youtu.be/contoh',
+      token_lisensi: 'LIC-2026-AB12-CD34',
+      alasan_penolakan: 'Nominal transfer kurang Rp 5.000.',
+      wa_pembeli: '0812-3456-7890',
+      link_admin: '#/admin/pesanan',
+      rating: '5/5',
+      isi_testimoni: 'Sangat membantu operasional toko kami.',
+      nama_toko: V.nama_toko || 'Katalog Aplikasi Web',
+      whatsapp: V.whatsapp || '085655860383',
+      sla: V.sla_verifikasi || '1x24 jam'
+    };
     const isi = (s) => String(s || '').replace(/\{(\w+)\}/g, (m, k) => (contoh[k] !== undefined ? contoh[k] : m));
-    $('#pv-subj').textContent = isi($('#tsubj').value); $('#pv-body').textContent = isi($('#tbody').value);
+    const sEl = $('#pv-subj'); if (sEl) sEl.textContent = isi($('#tsubj') ? $('#tsubj').value : '');
+    const bEl = $('#pv-body'); if (bEl) bEl.textContent = isi($('#tbody') ? $('#tbody').value : '');
+    const toEl = $('#pv-to');
+    if (toEl) {
+      toEl.textContent = (AdmP.tpl === '4' || AdmP.tpl === '5') ? (V.email_admin || 'admin@email.com') : 'nama@email.com';
+    }
+    const fromEl = $('#pv-from');
+    if (fromEl) {
+      fromEl.textContent = V.nama_toko || 'Katalog Aplikasi Web';
+    }
   }
   function ikatEmail() {
     muatTpl();
-    $('#tplpilih').addEventListener('change', (e) => { AdmP.tpl = e.target.value; muatTpl(); });
-    $('#tsubj').addEventListener('input', pratinjauEmail); $('#tbody').addEventListener('input', pratinjauEmail);
-    on(el, 'click', '[data-var]', (e, t) => { const ta = $('#tbody'); const s = ta.selectionStart; ta.value = ta.value.slice(0, s) + t.dataset.var + ta.value.slice(s); ta.focus(); ta.selectionStart = ta.selectionEnd = s + t.dataset.var.length; pratinjauEmail(); tandai(); });
-    $('#tplreset').addEventListener('click', () => { const b = d.template_bawaan; $('#tsubj').value = b['email_' + AdmP.tpl + '_subjek']; $('#tbody').value = b['email_' + AdmP.tpl + '_isi']; pratinjauEmail(); tandai(); });
+    const sel = $('#tplpilih');
+    if (sel) {
+      sel.addEventListener('change', (e) => {
+        simpanEmailAktif();
+        AdmP.tpl = e.target.value;
+        muatTpl();
+      });
+    }
+    const sEl = $('#tsubj');
+    if (sEl) {
+      sEl.addEventListener('input', () => {
+        simpanEmailAktif();
+        pratinjauEmail();
+        tandai();
+      });
+    }
+    const bEl = $('#tbody');
+    if (bEl) {
+      bEl.addEventListener('input', () => {
+        simpanEmailAktif();
+        pratinjauEmail();
+        tandai();
+      });
+    }
+    on(el, 'click', '[data-var]', (e, t) => {
+      const ta = $('#tbody');
+      if (!ta) return;
+      const s = ta.selectionStart || 0;
+      ta.value = ta.value.slice(0, s) + t.dataset.var + ta.value.slice(s);
+      ta.focus();
+      ta.selectionStart = ta.selectionEnd = s + t.dataset.var.length;
+      simpanEmailAktif();
+      pratinjauEmail();
+      tandai();
+    });
+    const rst = $('#tplreset');
+    if (rst) {
+      rst.addEventListener('click', () => {
+        const kSubj = 'email_' + AdmP.tpl + '_subjek';
+        const kIsi = 'email_' + AdmP.tpl + '_isi';
+        const bawaanSubj = (d.template_bawaan && d.template_bawaan[kSubj]) || DEFAULT_EMAIL_TEMPLATES[kSubj] || '';
+        const bawaanIsi = (d.template_bawaan && d.template_bawaan[kIsi]) || DEFAULT_EMAIL_TEMPLATES[kIsi] || '';
+        if ($('#tsubj')) $('#tsubj').value = bawaanSubj;
+        if ($('#tbody')) $('#tbody').value = bawaanIsi;
+        V[kSubj] = bawaanSubj;
+        V[kIsi] = bawaanIsi;
+        pratinjauEmail();
+        tandai();
+        toast('Template email dikembalikan ke bawaan.', 'info');
+      });
+    }
   }
   async function gantiSandiModal() {
     const v = await modal(`<h3>Ubah Kata Sandi Admin</h3><div class="field"><label>Kata Sandi Lama</label><input class="input" type="password" id="m_lama"></div><div class="field"><label>Kata Sandi Baru <span class="hint">(minimal 8 karakter)</span></label><input class="input" type="password" id="m_baru"></div><div class="act"><button class="btn btn-secondary" data-m="no">Batal</button><button class="btn btn-primary" data-m="ok">Simpan</button></div>`, { ambil: (m) => { const l = $('#m_lama', m).value, b = $('#m_baru', m).value; if (!l || b.length < 8) { toast('Isi kata sandi lama dan baru (minimal 8 karakter).', 'warn'); return false; } return { l, b }; } });
@@ -551,6 +693,9 @@ async function admPengaturan(c) {
   }
   gambarPanel();
   on(el, 'click', '[data-ptab]', (e, t) => {
+    if (AdmP.tab === 'email') {
+      simpanEmailAktif();
+    }
     AdmP.tab = t.dataset.ptab;
     gambarPanel(true);
   });
@@ -586,8 +731,25 @@ async function admPengaturan(c) {
   on(el, 'click', '[data-rmfaq]', (e, t) => { faq.splice(+t.dataset.rmfaq, 1); gambarFaq(); tandaiFaq(); });
   $('#uji-email').addEventListener('click', async (e) => { const b = e.currentTarget; tombolBusy(b, true, 'Mengirim...'); try { const r = await ambil('adminTestEmail'); toast(r.pesan, 'ok'); } catch (err) { toast(err.message, 'err'); } finally { tombolBusy(b, false); } });
   $('#simpan').addEventListener('click', async () => {
-    const btn = $('#simpan'); tombolBusy(btn, true, 'Menyimpan...');
+    const btn = $('#simpan');
+    tombolBusy(btn, true, 'Menyimpan...');
     try {
+      if (AdmP.tab === 'email') {
+        simpanEmailAktif();
+      }
+
+      // Pastikan seluruh 5 template email lengkap tersimpan di V
+      for (let i = 1; i <= 5; i++) {
+        const ks = 'email_' + i + '_subjek';
+        const ki = 'email_' + i + '_isi';
+        if (V[ks] === undefined || V[ks] === null) {
+          V[ks] = (d.template_bawaan && d.template_bawaan[ks]) || DEFAULT_EMAIL_TEMPLATES[ks] || '';
+        }
+        if (V[ki] === undefined || V[ki] === null) {
+          V[ki] = (d.template_bawaan && d.template_bawaan[ki]) || DEFAULT_EMAIL_TEMPLATES[ki] || '';
+        }
+      }
+
       const tugas = [ambil('adminSaveSettings', { nilai: V })];
       if (faqKotor) {
         const faqBersih = faq.filter((f) => f.pertanyaan.trim() && f.jawaban.trim());
@@ -599,12 +761,16 @@ async function admPengaturan(c) {
         Adm.faq = faq.filter((f) => f.pertanyaan.trim() && f.jawaban.trim());
         faqKotor = false;
       }
-      toast('Pengaturan berhasil disimpan.', 'ok');
+      toast('Pengaturan berhasil disimpan ke database.', 'ok');
       kotor = false;
       $('#dirty').classList.remove('dirty');
       $('#dirty').innerHTML = '<i></i> Tersimpan';
       bersihkanCachePublik();
       S.pengaturan = Object.assign({}, S.pengaturan, V);
-    } catch (e) { toast(e.message, 'err', 6000); } finally { tombolBusy(btn, false); }
+    } catch (e) {
+      toast(e.message, 'err', 6000);
+    } finally {
+      tombolBusy(btn, false);
+    }
   });
 }

@@ -228,10 +228,30 @@ const API = {
           setRows.forEach(r => { if (r.kunci) nilai[r.kunci] = r.nilai; });
         }
 
+        const template_bawaan = {
+          email_1_subjek: '[Menunggu Pembayaran] Pesanan {nama_aplikasi} ({kode_pesanan})',
+          email_1_isi: 'Halo {nama_pembeli},\n\nTerima kasih telah memesan {nama_aplikasi} (v{versi}) di {nama_toko}.\n\nDetail Pesanan:\n- Nomor Pesanan: {kode_pesanan}\n- Total Tagihan: {total_nominal}\n- Estimasi Verifikasi: {sla}\n\nSilakan lakukan transfer sesuai nominal ke rekening kami dan pastikan bukti transfer sudah diunggah. Anda dapat memantau status pesanan kapan saja melalui tautan berikut:\n{link_status}\n\nJika ada pertanyaan, jangan ragu untuk menghubungi kami via WhatsApp: {whatsapp}.\n\nSalam hangat,\n{nama_toko}',
+          email_2_subjek: '[Pesanan Selesai] Akses & Lisensi {nama_aplikasi} ({kode_pesanan})',
+          email_2_isi: 'Halo {nama_pembeli},\n\nKabar baik! Pembayaran untuk pesanan {kode_pesanan} telah kami verifikasi dan disetujui.\n\nDetail Akses Produk:\n- Nama Produk: {nama_aplikasi} (v{versi})\n- Token Lisensi: {token_lisensi}\n- Link Akses/Repository: {link_akses_privat}\n- Tutorial & Dokumentasi: {link_video_tutorial}\n\nStatus pesanan dan detail invoice resmi dapat dilihat di:\n{link_status}\n\nTerima kasih atas kepercayaan Anda bertransaksi di {nama_toko}. Selamat berkarya!\n\nWhatsApp Bantuan: {whatsapp}\n{nama_toko}',
+          email_3_subjek: '[Verifikasi Tertunda] Informasi Pesanan {kode_pesanan}',
+          email_3_isi: 'Halo {nama_pembeli},\n\nMohon maaf, pembayaran untuk pesanan {kode_pesanan} ({nama_aplikasi}) belum dapat kami setujui karena:\n\n{alasan_penolakan}\n\nSilakan periksa kembali bukti transfer dan lakukan konfirmasi ulang atau unggah bukti valid melalui tautan:\n{link_status}\n\nJika Anda membutuhkan bantuan segera, hubungi tim support kami via WhatsApp di {whatsapp}.\n\nSalam,\n{nama_toko}',
+          email_4_subjek: '[Pesanan Baru] {kode_pesanan} - {nama_pembeli} ({total_nominal})',
+          email_4_isi: 'Halo Admin {nama_toko},\n\nPesanan baru telah masuk ke dalam sistem!\n\nDetail Pesanan:\n- Kode: {kode_pesanan}\n- Pembeli: {nama_pembeli} ({email_pembeli} / {wa_pembeli})\n- Produk: {nama_aplikasi} (v{versi})\n- Total Nominal: {total_nominal}\n\nSegera cek bukti transfer dan lakukan verifikasi di dashboard admin:\n{link_admin}\n\nSistem Notifikasi {nama_toko}',
+          email_5_subjek: '[Testimoni Baru] Rating {rating} dari {nama_pembeli}',
+          email_5_isi: 'Halo Admin {nama_toko},\n\nTestimoni baru telah dikirimkan oleh pembeli!\n\nDetail Testimoni:\n- Pembeli: {nama_pembeli}\n- Produk: {nama_aplikasi}\n- Rating: {rating}\n- Ulasan: "{isi_testimoni}"\n\nSilakan moderasi testimoni ini melalui Dashboard Admin agar dapat tampil di halaman publik:\n{link_admin}\n\nSistem Notifikasi {nama_toko}'
+        };
+
+        // Jika template email belum tersimpan di database, pasang template bawaan
+        Object.keys(template_bawaan).forEach(k => {
+          if (nilai[k] === undefined || nilai[k] === null || nilai[k] === '') {
+            nilai[k] = template_bawaan[k];
+          }
+        });
+
         return {
           nilai: nilai,
           keterangan: {},
-          template_bawaan: {},
+          template_bawaan: template_bawaan,
           integrasi: {
             kuota_email_sisa: 'Unlimited (Vercel API)',
             spreadsheet_url: 'https://supabase.com/dashboard/project/ekqvovptxizwuawtkybe',
@@ -252,14 +272,27 @@ const API = {
       try {
         const nilai = data.nilai || {};
         const keys = Object.keys(nilai);
-        for (const k of keys) {
-          const val = nilai[k] === null || nilai[k] === undefined ? '' : String(nilai[k]);
-          const { error: upErr } = await sb.from('pengaturan').upsert({ kunci: k, nilai: val });
-          if (upErr) throw new ApiError(upErr.message, 'SAVE_ERROR');
+        if (keys.length === 0) {
+          return { pesan: 'Tidak ada pengaturan yang disimpan.', diubah: 0 };
         }
-        return { pesan: 'Pengaturan berhasil disimpan.', diubah: keys.length };
+
+        const rows = keys.map(k => ({
+          kunci: k,
+          nilai: (nilai[k] === null || nilai[k] === undefined) ? '' : String(nilai[k])
+        }));
+
+        const { error: bulkErr } = await sb.from('pengaturan').upsert(rows, { onConflict: 'kunci' });
+        if (bulkErr) {
+          console.warn('Bulk upsert gagal, mencoba simpan individual:', bulkErr.message);
+          for (const item of rows) {
+            const { error: singleErr } = await sb.from('pengaturan').upsert(item, { onConflict: 'kunci' });
+            if (singleErr) throw new ApiError(singleErr.message, 'SAVE_ERROR');
+          }
+        }
+        return { pesan: 'Pengaturan berhasil disimpan ke database.', diubah: keys.length };
       } catch (err) {
-        throw new ApiError(err.message || 'Gagal menyimpan pengaturan.', 'SETTINGS_ERROR');
+        console.error('adminSaveSettings error:', err);
+        throw new ApiError(err.message || 'Gagal menyimpan pengaturan ke database.', 'SETTINGS_ERROR');
       }
     }
 
