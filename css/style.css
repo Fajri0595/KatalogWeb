@@ -31,7 +31,7 @@ img { max-width: 100%; display: block; }
 button { font: inherit; color: inherit; }
 
 /* Affordance & Aksesibilitas (R-32, R-39) */
-a[href], button, summary, select, label[for], label.check, label.radio-card, label.switch,
+a[href], button, summary, select, label[for], label.check, label.switch,
 input[type="checkbox"], input[type="radio"], [role="button"], [role="tab"], [role="switch"] {
   cursor: pointer;
 }
@@ -139,7 +139,6 @@ a.link-btn:hover { text-decoration: underline; }
 .card.hoverable:hover { transform: translateY(-2px); box-shadow: var(--sh-2); border-color: var(--line-2); }
 .sec-title { display: flex; align-items: center; gap: 8px; font-size: 16px; line-height: 22px; font-weight: 600; letter-spacing: -.01em; color: var(--ink); }
 .sec-title .dot { width: 6px; height: 14px; border-radius: 2px; background: var(--indigo); }
-.divider { height: 1px; background: var(--line); border: 0; margin: 16px 0; }
 .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; min-width: 0; }
 .field > label, .lbl { font-size: 12px; line-height: 16px; font-weight: 600; color: var(--ink); display: flex; justify-content: space-between; gap: 8px; }
 .lbl .req, .req { color: var(--err-t); }
@@ -167,10 +166,6 @@ a.link-btn:hover { text-decoration: underline; }
 .check input { appearance: none; width: 16px; height: 16px; margin: 1px 0 0; border: 1px solid var(--line-2); border-radius: 4px; background: #fff; display: grid; place-content: center; flex: none; }
 .check input:checked { background: var(--indigo); border-color: var(--indigo); }
 .check input:checked::after { content: ''; width: 9px; height: 5px; border: 2px solid #fff; border-top: 0; border-right: 0; transform: rotate(-45deg) translate(1px, -1px); }
-.radio-card { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r); font-size: 13px; }
-.radio-card input { accent-color: var(--indigo); }
-.radio-card.on { border-color: var(--indigo); background: var(--indigo-50); }
-.radio-card .rc-r { margin-left: auto; font-family: var(--mono); font-size: 10px; color: var(--muted); }
 .switch { position: relative; width: 40px; height: 22px; flex: none; display: inline-block; }
 .switch input { appearance: none; position: absolute; inset: 0; margin: 0; border-radius: 9999px; background: var(--line-2); transition: background .15s; }
 .switch input:checked { background: var(--indigo); }
@@ -369,12 +364,6 @@ a.link-btn:hover { text-decoration: underline; }
 .vid .vbtn:hover .play { transform: scale(1.06); }
 .vid .play { width: 56px; height: 56px; border-radius: 50%; background: #fff; color: var(--indigo); display: grid; place-items: center; font-size: 24px; transition: transform .15s ease; }
 .vid .cap-v { font-size: 14px; font-weight: 500; }
-
-.meta3 { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--bg); border: 1px solid var(--line); border-radius: var(--r); }
-.meta3 > div { padding: 10px 12px; text-align: left; border-right: 1px solid var(--line); }
-.meta3 > div:last-child { border-right: 0; }
-.meta3 .k { font-family: var(--mono); font-size: 11px; color: var(--muted); }
-.meta3 .v { font-size: 13px; font-weight: 600; margin-top: 2px; color: var(--ink); }
 
 .note-i { display: flex; gap: 10px; padding: 12px 14px; background: var(--indigo-50); border: 1px solid var(--indigo-100); border-radius: var(--r); font-size: 13px; line-height: 19px; color: var(--indigo-800); }
 .note-i .ic { font-size: 18px; margin-top: 1px; color: var(--indigo); flex: none; }
@@ -699,7 +688,7 @@ a.link-btn:hover { text-decoration: underline; }
 .page-h p { color: var(--muted); margin-top: 4px; max-width: 640px; font-size: 14px; }
 .page-h .acts { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 24px; }
-.stats.c3, .stats-c3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.stats.c3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .stat { padding: 20px; display: flex; flex-direction: column; gap: 4px; border-radius: var(--r-md); }
 .stat .sh { font-size: 13px; font-weight: 500; color: var(--muted); display: flex; justify-content: space-between; align-items: center; }
 .stat .sv { font-family: var(--mono); font-size: 24px; line-height: 30px; font-weight: 700; letter-spacing: -.02em; color: var(--ink); margin-top: 4px; }
@@ -726,8 +715,6 @@ a.link-btn:hover { text-decoration: underline; }
 .hb .track { height: 6px; border-radius: 4px; background: var(--alt); overflow: hidden; }
 .hb .track i { display: block; height: 100%; background: var(--indigo); border-radius: 4px; }
 .hb .sub { display: flex; justify-content: space-between; margin-top: 4px; font-family: var(--mono); font-size: 11px; color: var(--muted); }
-.insight { display: flex; gap: 10px; padding: 12px 14px; background: var(--bg); border: 1px solid var(--line); border-radius: var(--r); font-size: 13px; line-height: 18px; margin-top: 16px; }
-.insight .ic { color: var(--indigo); font-size: 18px; }
 .tbl-wrap {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
@@ -847,7 +834,6 @@ table.tbl {
 .int-card { display: flex; align-items: center; gap: 14px; padding: 16px; }
 .int-card .iic { width: 42px; height: 42px; border-radius: var(--r); background: var(--indigo-50); border: 1px solid var(--indigo-100); color: var(--indigo-700); display: grid; place-items: center; font-size: 20px; flex: none; }
 .tools-btn { display: none; }
-.spinner-page { display: grid; place-items: center; min-height: 40vh; color: var(--muted); }
 .row-rekening { display: grid; grid-template-columns: 1.3fr 1fr; gap: 20px; align-items: start; }
 .row-email { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
 
@@ -935,7 +921,7 @@ table.tbl {
   .grid-cards, .grid-cards.list { grid-template-columns: 1fr; }
   .grid-cards.list .pcard { flex-direction: column; } .grid-cards.list .pcard .pv-wrap { width: auto; border-right: 0; border-bottom: 1px solid var(--line); }
   .row.c2, .row.c3, .row.c4 { grid-template-columns: 1fr; }
-  .stats, .stats.c3, .stats-c3 { grid-template-columns: 1fr; gap: 12px; }
+  .stats, .stats.c3 { grid-template-columns: 1fr; gap: 12px; }
   .stat { padding: 16px; }
   .adm-in { padding: 16px 12px; }
   .topbar { height: 56px; padding: 0 12px; gap: 8px; }

@@ -81,12 +81,6 @@ const API = {
       }
     }
 
-    if (action === 'getCatalog') {
-      const { data, error } = await sb.from('aplikasi').select('*').eq('is_aktif', true).order('created_at', { ascending: false });
-      if (error) throw new ApiError(error.message, 'DB_ERROR');
-      return data || [];
-    }
-
     if (action === 'getApp') {
       const id = params && params.id;
       const { data, error } = await sb.from('aplikasi').select('*').eq('id', id).single();
@@ -100,15 +94,7 @@ const API = {
       return data || [];
     }
 
-    if (action === 'getSettings') {
-      const { data, error } = await sb.from('pengaturan').select('*');
-      if (error) throw new ApiError(error.message, 'DB_ERROR');
-      const hasil = {};
-      (data || []).forEach(r => { hasil[r.kunci] = r.nilai; });
-      return hasil;
-    }
-
-    return this._kirimApi(`/api/${action}`, 'GET', params);
+    throw new ApiError('Aksi publik ' + action + ' tidak dikenali.', 'UNKNOWN_ACTION');
   },
 
   async post(action, data) {
@@ -531,33 +517,10 @@ const API = {
       return { success: true };
     }
 
-    return this._kirimApi(`/api/${action}`, 'POST', data);
+    throw new ApiError('Aksi ' + action + ' tidak dikenali.', 'UNKNOWN_ACTION');
   },
 
   admin(action, data, opsi) {
     return this.post(action, data, Object.assign({ admin: true }, opsi || {}));
-  },
-
-  async _kirimApi(endpoint, method, payload) {
-    try {
-      const options = {
-        method: method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${Sesi.ambil()}`
-        }
-      };
-      if (method === 'POST') {
-        options.body = JSON.stringify(payload || {});
-      }
-      const res = await fetch(endpoint, options);
-      const json = await res.json();
-      if (!res.ok || json.success === false) {
-        throw new ApiError(json.message || 'Gagal memproses permintaan.', json.code || 'API_ERROR');
-      }
-      return json.data || json;
-    } catch (e) {
-      throw new ApiError(e.message || 'Terjadi kesalahan koneksi server.', 'JARINGAN');
-    }
   }
 };
