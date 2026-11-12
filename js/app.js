@@ -1,5 +1,5 @@
 /* ============================================================
-   app.js — router (hash) & bootstrap
+   app.js - router (hash) & bootstrap
    Rute memakai hash (#/...) supaya berfungsi di GitHub Pages
    tanpa pengaturan server tambahan.
    ============================================================ */
@@ -45,7 +45,6 @@ function bersihkanCachePublik() {
 async function muatBootstrap() {
   let lastUpdate = '0';
   try { lastUpdate = localStorage.getItem('kaw_last_update') || '0'; } catch (e) {}
-  // Stale-While-Revalidate via localStorage: jika ada data tersimpan di browser, langsung pakai seketika (0ms delay)
   const c = ls('kaw_boot') || ss('kaw_boot');
   if (S.siap && c && c.u === lastUpdate) return;
   if (c && c.d && Array.isArray(c.d.aplikasi) && c.d.aplikasi.length > 0) {
@@ -56,7 +55,6 @@ async function muatBootstrap() {
     S.apps = c.d.aplikasi || [];
     S.siap = true;
 
-    // Perbarui data di latar belakang tanpa menunda tampilan UI jika data lebih dari 2 menit
     if (Date.now() - (c.t || 0) > 2 * 60 * 1000) {
       API.get('getBootstrap').then(d => {
         if (!d) return;
@@ -85,7 +83,6 @@ async function muatBootstrap() {
 }
 
 function praMuatPublik() {
-  // Lakukan pre-fetch FAQ publik di latar belakang agar klik tab Bantuan langsung 0ms
   if (!S.faq && !S.memuatFaq) {
     S.memuatFaq = true;
     API.get('getFaq').then(f => { S.faq = f; S.memuatFaq = false; }).catch(() => { S.memuatFaq = false; });
@@ -93,8 +90,8 @@ function praMuatPublik() {
 }
 
 function skelHalaman() {
-  return `<div class="container" style="padding-top:48px"><div class="skel" style="height:40px;width:50%;margin:0 auto 16px"></div><div class="skel" style="height:20px;width:65%;margin:0 auto 32px"></div>
-    <div class="grid-cards" style="margin-top:48px">${'<div class="card" style="padding:16px"><div class="skel" style="aspect-ratio:16/10"></div><div class="skel" style="height:14px;width:40%;margin-top:16px"></div><div class="skel" style="height:20px;margin-top:10px"></div><div class="skel" style="height:14px;margin-top:10px"></div></div>'.repeat(3)}</div></div>`;
+  return `<div class="container" style="padding-top:36px"><div class="skel" style="height:36px;width:45%;margin-bottom:12px"></div><div class="skel" style="height:20px;width:60%;margin-bottom:28px"></div>
+    <div class="grid-cards" style="margin-top:24px">${'<div class="card" style="padding:16px"><div class="skel" style="aspect-ratio:16/9"></div><div class="skel" style="height:14px;width:40%;margin-top:16px"></div><div class="skel" style="height:20px;margin-top:10px"></div><div class="skel" style="height:14px;margin-top:10px"></div></div>'.repeat(3)}</div></div>`;
 }
 
 async function jalankan() {
@@ -106,14 +103,9 @@ async function jalankan() {
   document.body.classList.remove('has-buybar');
 
   if (path === '/admin' || path.indexOf('/admin/') === 0) {
-    document.title = 'Admin — ' + (S.pengaturan.nama_toko || APP_CONFIG.NAMA_DEFAULT);
+    const namaToko = (S.pengaturan.nama_toko || APP_CONFIG.NAMA_DEFAULT).replace(/\u2014/g, '-');
+    document.title = 'Admin | ' + namaToko;
     await pgAdmin({ path, query, batal });
-    const admMain = $('#adm-main');
-    if (admMain) {
-      admMain.classList.remove('page-enter');
-      void admMain.offsetWidth;
-      admMain.classList.add('page-enter');
-    }
     if (window.TopBar) TopBar.done();
     return;
   }
@@ -121,21 +113,18 @@ async function jalankan() {
   if (!hit) { if (window.TopBar) TopBar.done(); location.replace('#/'); return; }
   layoutPublik(hit.r.n);
   const el = $('#page');
-  document.title = S.pengaturan.nama_toko || APP_CONFIG.NAMA_DEFAULT;
+  document.title = (S.pengaturan.nama_toko || APP_CONFIG.NAMA_DEFAULT).replace(/\u2014/g, '-');
   if (!S.siap) {
     el.innerHTML = skelHalaman();
     try { await muatBootstrap(); }
     catch (e) { if (window.TopBar) TopBar.done(); if (!batal()) galat(el, e, () => jalankan()); return; }
     if (batal()) return;
     layoutPublik(hit.r.n);
-    document.title = S.pengaturan.nama_toko || APP_CONFIG.NAMA_DEFAULT;
+    document.title = (S.pengaturan.nama_toko || APP_CONFIG.NAMA_DEFAULT).replace(/\u2014/g, '-');
   }
   praMuatPublik();
   try {
     await hit.r.f({ el, params: hit.params, query, batal });
-    el.classList.remove('page-enter');
-    void el.offsetWidth;
-    el.classList.add('page-enter');
     if (window.TopBar) TopBar.done();
   }
   catch (e) {

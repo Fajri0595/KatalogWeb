@@ -1,9 +1,9 @@
 /* ============================================================
-   admin2.js — kelola aplikasi, moderasi testimoni, pengaturan
+   admin2.js - kelola aplikasi, moderasi testimoni, pengaturan
    ============================================================ */
 
 // ============================================================
-// KELOLA APLIKASI — DAFTAR
+// KELOLA APLIKASI - DAFTAR
 // ============================================================
 const AdmA = { q: '', kat: 'Semua', status: 'Semua', hal: 1 };
 async function admAplikasi(c) {
@@ -20,8 +20,8 @@ async function admAplikasi(c) {
       <div class="card stat"><div class="lbl-mono">Rata-rata Nilai Lisensi</div><div class="sv" style="font-size:24px">${rupiah(apps.length ? apps.reduce((s, a) => s + a.harga, 0) / apps.length : 0)}</div></div>
       <div class="card stat"><div class="lbl-mono">Total Terjual (Disetujui)</div><div class="sv">${apps.reduce((s, a) => s + a.jumlah_pesanan, 0)}<small>lisensi</small></div></div></div>
     <div class="card"><div class="filters">
-        <div class="ig">${icon('search')}<input class="input" id="q" placeholder="Cari nama aplikasi, kategori, ID..." value="${esc(AdmA.q)}"></div>
-        <select class="select" id="kat">${kats.map((k) => `<option value="${esc(k)}" ${AdmA.kat === k ? 'selected' : ''}>${k === 'Semua' ? 'Kategori: Semua' : esc(k)}</option>`).join('')}</select>
+        <div class="ig">${icon('search')}<input class="input" id="q" aria-label="Cari aplikasi" placeholder="Cari nama aplikasi, kategori, ID..." value="${esc(AdmA.q)}"></div>
+        <select class="select" id="kat" aria-label="Filter kategori aplikasi">${kats.map((k) => `<option value="${esc(k)}" ${AdmA.kat === k ? 'selected' : ''}>${k === 'Semua' ? 'Kategori: Semua' : esc(k)}</option>`).join('')}</select>
         <div class="tabs seg-t" id="stt">${['Semua', 'Tersedia', 'Segera Hadir', 'Tidak Dijual'].map((s) => `<button class="${AdmA.status === s ? 'on' : ''}" data-st="${esc(s)}">${s}</button>`).join('')}</div></div>
       <div class="tbl-wrap" id="tbl"></div><div class="tbl-foot" id="fot"></div></div>`;
   function saring() {
@@ -37,13 +37,13 @@ async function admAplikasi(c) {
       $$('#stt button', el).forEach((b) => b.classList.toggle('on', b.dataset.st === AdmA.status));
     }
     const tblEl = $('#tbl');
-    tblEl.innerHTML = daftar.length ? `<table class="tbl"><thead><tr><th>Aplikasi</th><th>Harga</th><th>Status</th><th>Versi &amp; Rilis</th><th>Tampil Publik</th><th>Terjual</th><th>Diubah</th><th style="text-align:right">Aksi</th></tr></thead><tbody>${daftar.slice((AdmA.hal - 1) * per, AdmA.hal * per).map((a) => `<tr><td><div class="app-cell"><div class="app-ic">${a.thumb ? `<img alt="" src="${esc(driveThumb(a.thumb, 100))}">` : icon('package')}</div><div style="min-width:0"><b>${esc(a.nama)}</b><div class="sub mono">${esc(a.id)} • ${esc(a.kategori)}</div></div></div></td><td class="mono">${rupiah(a.harga)}</td><td>${pil(a.status)}</td><td class="sub">v${esc(a.versi || '-')}<br>${esc(tgl(a.tanggal_rilis))}</td><td><label class="switch"><input type="checkbox" data-toggle="${esc(a.id)}" ${a.tampil_publik ? 'checked' : ''}></label></td><td class="mono">${a.jumlah_pesanan}</td><td class="sub">${esc(relatif(a.diubah_pada))}</td><td style="text-align:right"><a class="btn btn-secondary btn-sm" href="#/admin/aplikasi/${esc(a.id)}">${icon('pencil')} Ubah</a> <button class="btn btn-ghost btn-sm btn-icon" data-hapus="${esc(a.id)}" aria-label="Hapus">${icon('trash')}</button></td></tr>`).join('')}</tbody></table>` : `<div class="empty"><div class="em-ic">${icon('package')}</div><h3>Belum ada aplikasi</h3><p>Klik "Tambah Aplikasi Baru" untuk mengisi katalog.</p></div>`;
+    tblEl.innerHTML = daftar.length ? `<table class="tbl"><thead><tr><th>Aplikasi</th><th>Harga</th><th>Status</th><th>Versi &amp; Rilis</th><th>Tampil Publik</th><th>Terjual</th><th>Diubah</th><th style="text-align:right">Aksi</th></tr></thead><tbody>${daftar.slice((AdmA.hal - 1) * per, AdmA.hal * per).map((a) => `<tr><td><div class="app-cell"><div class="app-ic">${a.thumb ? `<img alt="" src="${esc(driveThumb(a.thumb, 100))}" width="44" height="44">` : icon('package')}</div><div style="min-width:0"><b>${esc(a.nama)}</b><div class="sub mono">${esc(a.id)} • ${esc(a.kategori)}</div></div></div></td><td class="mono">${rupiah(a.harga)}</td><td>${pil(a.status)}</td><td class="sub">v${esc(a.versi || '-')}<br>${esc(tgl(a.tanggal_rilis))}</td><td><label class="switch"><input type="checkbox" aria-label="Tampilkan ${esc(a.nama)} di katalog publik" data-toggle="${esc(a.id)}" ${a.tampil_publik ? 'checked' : ''}></label></td><td class="mono">${a.jumlah_pesanan}</td><td class="sub">${esc(relatif(a.diubah_pada))}</td><td style="text-align:right"><a class="btn btn-secondary btn-sm" href="#/admin/aplikasi/${esc(a.id)}">${icon('pencil')} Ubah</a> <button class="btn btn-ghost btn-sm btn-icon" data-hapus="${esc(a.id)}" aria-label="Hapus">${icon('trash')}</button></td></tr>`).join('')}</tbody></table>` : `<div class="empty"><div class="em-ic">${icon('package')}</div><h3>Belum ada aplikasi</h3><p>Klik "Tambah Aplikasi Baru" untuk mengisi katalog.</p></div>`;
     if (hanyaTbl) {
       tblEl.classList.remove('tab-enter');
       void tblEl.offsetWidth;
       tblEl.classList.add('tab-enter');
     }
-    $('#fot').innerHTML = `<span>Menampilkan <b style="color:var(--ink)">${daftar.length ? (AdmA.hal - 1) * per + 1 : 0}-${Math.min(daftar.length, AdmA.hal * per)}</b> dari <b style="color:var(--ink)">${daftar.length}</b> total item katalog</span><div class="pager" style="margin:0;padding:0;border:0"><div class="pg"><button data-h="${AdmA.hal - 1}" ${AdmA.hal <= 1 ? 'disabled' : ''}>${icon('chevron-left')}</button>${Array.from({ length: tot }, (_, i) => `<button class="${i + 1 === AdmA.hal ? 'on' : ''}" data-h="${i + 1}">${i + 1}</button>`).join('')}<button data-h="${AdmA.hal + 1}" ${AdmA.hal >= tot ? 'disabled' : ''}>${icon('chevron-right')}</button></div></div>`;
+    $('#fot').innerHTML = `<span>Menampilkan <b style="color:var(--ink)">${daftar.length ? (AdmA.hal - 1) * per + 1 : 0}-${Math.min(daftar.length, AdmA.hal * per)}</b> dari <b style="color:var(--ink)">${daftar.length}</b> total item katalog</span><div class="pager" style="margin:0;padding:0;border:0"><div class="pg"><button data-h="${AdmA.hal - 1}" aria-label="Halaman sebelumnya" ${AdmA.hal <= 1 ? 'disabled' : ''}>${icon('chevron-left')}</button>${Array.from({ length: tot }, (_, i) => `<button class="${i + 1 === AdmA.hal ? 'on' : ''}" data-h="${i + 1}">${i + 1}</button>`).join('')}<button data-h="${AdmA.hal + 1}" aria-label="Halaman berikutnya" ${AdmA.hal >= tot ? 'disabled' : ''}>${icon('chevron-right')}</button></div></div>`;
   }
   gambar();
   $('#segar').addEventListener('click', async () => {
@@ -72,7 +72,7 @@ async function admAplikasi(c) {
 }
 
 // ============================================================
-// KELOLA APLIKASI — FORM TAMBAH/UBAH
+// KELOLA APLIKASI - FORM TAMBAH/UBAH
 // ============================================================
 function baris(f) { return typeof f === 'string' ? f : JSON.stringify(f); }
 function kosongForm() { return { id: '', nama: '', kategori: '', harga: '', harga_coret: '', status: 'Tersedia', versi: '', tanggal_rilis: '', urutan: 1, teknologi: [], lisensi: 'Full Access', tampil_publik: true, thumb: '', galeri: [], video_penggunaan: '', video_instalasi: '', link_demo: '', link_akses_privat: '', catatan_email: '', deskripsi_singkat: '', deskripsi_lengkap: '', fitur: [], persyaratan: '', langkah: [] }; }
@@ -89,7 +89,7 @@ async function admAplikasiForm(c) {
   }
   let kotor = false;
   const kategoriAda = Array.from(new Set((Adm.apps || []).map((a) => a.kategori))).filter(Boolean);
-  document.title = (baru ? 'Tambah Aplikasi' : 'Ubah ' + F.nama) + ' — Admin';
+  document.title = (baru ? 'Tambah Aplikasi' : 'Ubah ' + F.nama) + ' | Admin';
 
   function render() {
     el.innerHTML = `<a href="#/admin/aplikasi" class="t-sm" style="display:inline-flex;gap:6px;align-items:center;color:var(--muted);margin-bottom:8px">${icon('arrow-left')} Kembali ke Kelola Aplikasi</a>
@@ -104,21 +104,21 @@ async function admAplikasiForm(c) {
             <div class="row c2"><div class="field"><label for="fstatus">Status Ketersediaan</label><select class="select" id="fstatus"><option value="Tersedia" ${F.status === 'Tersedia' ? 'selected' : ''}>Tersedia (Dapat Dibeli)</option><option value="Segera Hadir" ${F.status === 'Segera Hadir' ? 'selected' : ''}>Segera Hadir (Pre-order)</option><option value="Tidak Dijual" ${F.status === 'Tidak Dijual' ? 'selected' : ''}>Tidak Dijual (Arsip)</option></select></div><div class="field"><label for="furut">Urutan Tampil</label><input class="input" id="furut" type="number" value="${F.urutan}"></div></div>
             <div class="row c2"><div class="field"><label for="fver">Versi Rilis</label><input class="input" id="fver" maxlength="20" placeholder="2.1" value="${esc(F.versi)}"></div><div class="field"><label for="ftgl">Tanggal Rilis</label><input class="input" id="ftgl" type="date" value="${esc(F.tanggal_rilis)}"></div></div>
             <div class="field"><label for="flisensi">Jenis Lisensi</label><input class="input" id="flisensi" maxlength="60" value="${esc(F.lisensi)}"></div>
-            <div class="field" style="margin-bottom:0"><label>Tumpukan Teknologi (Tech Stack)</label><div class="tag-in" id="tagwrap"><input id="taginput" placeholder="Ketik lalu Enter, mis. Google Apps Script"></div></div></div>
+            <div class="field" style="margin-bottom:0"><label for="taginput">Tumpukan Teknologi (Tech Stack)</label><div class="tag-in" id="tagwrap"><input id="taginput" aria-label="Tambah teknologi" placeholder="Ketik lalu Enter, mis. Google Apps Script"></div></div></div>
           <div class="card card-p"><div class="sec-title" style="margin-bottom:16px">${icon('book')} Deskripsi &amp; Dokumen Fitur</div>
             <div class="field"><label for="fdesk">Deskripsi Lengkap</label><div class="md-tool"><button type="button" data-md="b" title="Tebal"><b>B</b></button><button type="button" data-md="i" title="Miring"><i>I</i></button><button type="button" data-md="h" title="Judul">H</button><button type="button" data-md="l" title="Daftar">•</button><button type="button" data-md="k" title="Kode">&lt;/&gt;</button></div><div class="md-ed"><textarea class="textarea" id="fdesk">${esc(F.deskripsi_lengkap)}</textarea><div class="pvw prose" id="fdesk-pv"></div></div><div class="hint">Mendukung format Markdown ringan (#, **tebal**, - daftar).</div></div>
             <div class="field"><label>Fitur Unggulan</label><div id="fitwrap"></div><button class="btn btn-secondary btn-sm" type="button" id="addfit">${icon('plus')} Tambah Fitur</button></div>
             <div class="field"><label for="fsyarat">Persyaratan Sistem <span class="opt">(satu per baris)</span></label><textarea class="textarea" id="fsyarat" rows="3">${esc(F.persyaratan)}</textarea></div>
             <div class="field" style="margin-bottom:0"><label>Langkah Instalasi</label><div id="lkwrap"></div><button class="btn btn-secondary btn-sm" type="button" id="addlk">${icon('plus')} Tambah Langkah</button></div></div>
           <div class="card card-p"><div class="sec-title" style="margin-bottom:16px">${icon('image')} Media Visual &amp; Tautan Video</div>
-            <div class="field"><label>Thumbnail Sampul Utama (rasio 16:9)</label><div class="thumb-big" id="thumbbox"></div><input type="file" id="thumbinput" accept="image/*" class="hide"></div>
-            <div class="field"><label>Galeri Tangkapan Layar <span class="opt">(maks. 5)</span></label><div class="gal-adm" id="galwrap"></div><input type="file" id="galinput" accept="image/*" multiple class="hide"><button class="btn btn-secondary btn-sm" type="button" id="addgal">${icon('upload-cloud')} Tambah Foto</button></div>
+            <div class="field"><label>Thumbnail Sampul Utama (rasio 16:9)</label><div class="thumb-big" id="thumbbox"></div><input type="file" id="thumbinput" accept="image/*" class="hide" aria-label="Unggah thumbnail sampul"></div>
+            <div class="field"><label>Galeri Tangkapan Layar <span class="opt">(maks. 5)</span></label><div class="gal-adm" id="galwrap"></div><input type="file" id="galinput" accept="image/*" multiple class="hide" aria-label="Unggah galeri tangkapan layar"><button class="btn btn-secondary btn-sm" type="button" id="addgal">${icon('upload-cloud')} Tambah Foto</button></div>
             <div class="row c2"><div class="field"><label for="fvidp">Link Video Cara Pakai (YouTube)</label><input class="input" id="fvidp" placeholder="https://youtu.be/..." value="${esc(F.video_penggunaan)}"></div><div class="field"><label for="fvidi">Link Video Tutorial Instalasi</label><input class="input" id="fvidi" placeholder="https://youtu.be/..." value="${esc(F.video_instalasi)}"></div></div></div>
         </div>
         <div class="col">
           <div class="card card-p"><div class="sec-title" style="margin-bottom:16px">${icon('link')} Tautan Aplikasi</div>
             <div class="field"><label for="fdemo">Link Demo Publik <span class="opt">(opsional)</span></label><input class="input" id="fdemo" placeholder="https://" value="${esc(F.link_demo)}"></div>
-            <div class="private-box"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px"><b class="t-sm">${icon('lock')} Link Akses Privat (Source Code)</b><span class="pill pill-ink">Rahasia</span></div><input class="input mono" id="fakses" placeholder="https://github.com/user/repo atau link ZIP" value="${esc(F.link_akses_privat)}" style="background:#fff"><p class="hint" style="margin-top:8px">Tautan ini tidak pernah tampil di halaman publik. Otomatis dikirim ke email pembeli setelah pembayaran disetujui.</p></div>
+            <div class="private-box"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px"><label for="fakses" class="t-sm" style="font-weight:600;margin:0">${icon('lock')} Link Akses Privat (Source Code)</label><span class="pill pill-ink">Rahasia</span></div><input class="input mono" id="fakses" placeholder="https://github.com/user/repo atau link ZIP" value="${esc(F.link_akses_privat)}" style="background:#fff"><p class="hint" style="margin-top:8px">Tautan ini tidak pernah tampil di halaman publik. Otomatis dikirim ke email pembeli setelah pembayaran disetujui.</p></div>
             <div class="field" style="margin:16px 0 0"><label for="fcatatan">Catatan Khusus untuk Email Pembeli <span class="opt">(opsional)</span></label><textarea class="textarea" id="fcatatan" rows="3" maxlength="2000">${esc(F.catatan_email)}</textarea></div></div>
           <div class="card card-p"><div class="sec-title" style="margin-bottom:12px">${icon('eye')} Visibilitas</div><label class="check"><input type="checkbox" id="ftampil" ${F.tampil_publik ? 'checked' : ''}><span>Tampilkan di katalog publik</span></label>
             ${!baru ? `<div class="hint" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line)">Dibuat: ${esc(tgl(F.dibuat_pada, true))}<br>Diubah: ${esc(tgl(F.diubah_pada, true))} oleh ${esc(F.diubah_oleh || '-')}</div>` : ''}</div>
@@ -148,20 +148,20 @@ async function admAplikasiForm(c) {
     });
 
     // Tags
-    function gambarTag() { $('#tagwrap').innerHTML = F.teknologi.map((t, i) => `<span class="tag">${esc(t)}<button type="button" data-rmtag="${i}">${icon('x')}</button></span>`).join('') + '<input id="taginput" placeholder="Ketik lalu Enter">'; $('#taginput').addEventListener('keydown', tagKey); }
+    function gambarTag() { $('#tagwrap').innerHTML = F.teknologi.map((t, i) => `<span class="tag">${esc(t)}<button type="button" data-rmtag="${i}" aria-label="Hapus tag ${esc(t)}">${icon('x')}</button></span>`).join('') + '<input id="taginput" aria-label="Tambah teknologi" placeholder="Ketik lalu Enter">'; $('#taginput').addEventListener('keydown', tagKey); }
     function tagKey(e) { if ((e.key === 'Enter' || e.key === ',') && e.target.value.trim()) { e.preventDefault(); if (F.teknologi.length < 12) F.teknologi.push(e.target.value.trim().slice(0, 30)); e.target.value = ''; gambarTag(); tandaiKotor(); } else if (e.key === 'Backspace' && !e.target.value && F.teknologi.length) { F.teknologi.pop(); gambarTag(); tandaiKotor(); } }
     $('#taginput').addEventListener('keydown', tagKey);
     on(el, 'click', '[data-rmtag]', (e, t) => { F.teknologi.splice(+t.dataset.rmtag, 1); gambarTag(); tandaiKotor(); });
 
     // Fitur & langkah (list dinamis)
-    function gambarFitur() { $('#fitwrap').innerHTML = F.fitur.map((f, i) => `<div class="rep"><span class="lbl-mono" style="padding-top:8px">#${i + 1}</span><div class="rc"><input class="input" placeholder="Judul fitur" data-fit-j="${i}" value="${esc(f.judul)}"><textarea class="textarea" rows="2" placeholder="Deskripsi singkat" data-fit-d="${i}">${esc(f.deskripsi)}</textarea></div><button class="btn btn-ghost btn-sm btn-icon" data-rmfit="${i}">${icon('trash')}</button></div>`).join(''); }
+    function gambarFitur() { $('#fitwrap').innerHTML = F.fitur.map((f, i) => `<div class="rep"><span class="lbl-mono" style="padding-top:8px">#${i + 1}</span><div class="rc"><input class="input" aria-label="Judul fitur ${i + 1}" placeholder="Judul fitur" data-fit-j="${i}" value="${esc(f.judul)}"><textarea class="textarea" rows="2" aria-label="Deskripsi fitur ${i + 1}" placeholder="Deskripsi singkat" data-fit-d="${i}">${esc(f.deskripsi)}</textarea></div><button class="btn btn-ghost btn-sm btn-icon" type="button" aria-label="Hapus fitur ${i + 1}" data-rmfit="${i}">${icon('trash')}</button></div>`).join(''); }
     gambarFitur();
     $('#addfit').addEventListener('click', () => { if (F.fitur.length >= 8) return toast('Maksimal 8 fitur.', 'warn'); F.fitur.push({ judul: '', deskripsi: '' }); gambarFitur(); tandaiKotor(); });
     on(el, 'input', '[data-fit-j]', (e, t) => { F.fitur[+t.dataset.fitJ].judul = t.value; });
     on(el, 'input', '[data-fit-d]', (e, t) => { F.fitur[+t.dataset.fitD].deskripsi = t.value; });
     on(el, 'click', '[data-rmfit]', (e, t) => { F.fitur.splice(+t.dataset.rmfit, 1); gambarFitur(); tandaiKotor(); });
 
-    function gambarLangkah() { $('#lkwrap').innerHTML = F.langkah.map((l, i) => `<div class="rep"><span class="lbl-mono" style="padding-top:8px">${i + 1}</span><div class="rc"><input class="input" placeholder="Judul langkah" data-lk-j="${i}" value="${esc(l.judul)}"><div style="display:flex;gap:8px"><textarea class="textarea" rows="2" placeholder="Deskripsi" data-lk-d="${i}" style="flex:1">${esc(l.deskripsi)}</textarea><input class="input mono" placeholder="Durasi" data-lk-t="${i}" style="width:90px" value="${esc(l.durasi || '')}"></div></div><button class="btn btn-ghost btn-sm btn-icon" data-rmlk="${i}">${icon('trash')}</button></div>`).join(''); }
+    function gambarLangkah() { $('#lkwrap').innerHTML = F.langkah.map((l, i) => `<div class="rep"><span class="lbl-mono" style="padding-top:8px">${i + 1}</span><div class="rc"><input class="input" aria-label="Judul langkah ${i + 1}" placeholder="Judul langkah" data-lk-j="${i}" value="${esc(l.judul)}"><div style="display:flex;gap:8px"><textarea class="textarea" rows="2" aria-label="Deskripsi langkah ${i + 1}" placeholder="Deskripsi" data-lk-d="${i}" style="flex:1">${esc(l.deskripsi)}</textarea><input class="input mono" aria-label="Durasi langkah ${i + 1}" placeholder="Durasi" data-lk-t="${i}" style="width:90px" value="${esc(l.durasi || '')}"></div></div><button class="btn btn-ghost btn-sm btn-icon" type="button" aria-label="Hapus langkah ${i + 1}" data-rmlk="${i}">${icon('trash')}</button></div>`).join(''); }
     gambarLangkah();
     $('#addlk').addEventListener('click', () => { if (F.langkah.length >= 8) return toast('Maksimal 8 langkah.', 'warn'); F.langkah.push({ judul: '', deskripsi: '', durasi: '' }); gambarLangkah(); tandaiKotor(); });
     on(el, 'input', '[data-lk-j]', (e, t) => { F.langkah[+t.dataset.lkJ].judul = t.value; });
@@ -170,13 +170,13 @@ async function admAplikasiForm(c) {
     on(el, 'click', '[data-rmlk]', (e, t) => { F.langkah.splice(+t.dataset.rmlk, 1); gambarLangkah(); tandaiKotor(); });
 
     // Media
-    function gambarThumb() { $('#thumbbox').innerHTML = (F.thumb ? `<img alt="" src="${esc(driveThumb(F.thumb, 700))}">` : `<div style="height:100%;display:grid;place-items:center;color:var(--faint)">${icon('image')}</div>`) + `<div class="tb-bar"><span>${F.thumb ? 'Thumbnail tersimpan' : 'Belum ada thumbnail'}</span><span style="display:flex;gap:6px"><button class="btn btn-secondary btn-sm" type="button" id="gantithumb">${icon('upload-cloud')} ${F.thumb ? 'Ganti' : 'Unggah'} Gambar</button></span></div>`; $('#gantithumb').addEventListener('click', () => $('#thumbinput').click()); }
+    function gambarThumb() { $('#thumbbox').innerHTML = (F.thumb ? `<img alt="Pratinjau thumbnail" src="${esc(driveThumb(F.thumb, 700))}" width="640" height="360">` : `<div style="height:100%;display:grid;place-items:center;color:var(--faint)">${icon('image')}</div>`) + `<div class="tb-bar"><span>${F.thumb ? 'Thumbnail tersimpan' : 'Belum ada thumbnail'}</span><span style="display:flex;gap:6px"><button class="btn btn-secondary btn-sm" type="button" id="gantithumb">${icon('upload-cloud')} ${F.thumb ? 'Ganti' : 'Unggah'} Gambar</button></span></div>`; $('#gantithumb').addEventListener('click', () => $('#thumbinput').click()); }
     gambarThumb();
     bindUploadTombol($('#thumbinput'), async (file) => {
       try { const g = await siapkanGambar(file, { maxSisi: 1280, kualitas: 0.85, webp: true }); const r = await ambil('adminUploadMedia', { jenis: 'thumbnail', nama: g.nama, mime: g.mime, base64: g.base64 }); F.thumb = r.id; gambarThumb(); tandaiKotor(); toast('Thumbnail terunggah.', 'ok', 2000); }
       catch (e) { toast(e.message, 'err'); }
     });
-    function gambarGaleri() { $('#galwrap').innerHTML = F.galeri.map((g, i) => `<div class="gi"><img alt="" src="${esc(driveThumb(g.id, 300))}"><input class="input" placeholder="Label foto" data-gal-l="${i}" value="${esc(g.label || '')}"><button class="x" type="button" data-rmgal="${i}" aria-label="Hapus">${icon('x')}</button></div>`).join(''); $('#addgal').disabled = F.galeri.length >= 5; }
+    function gambarGaleri() { $('#galwrap').innerHTML = F.galeri.map((g, i) => `<div class="gi"><img alt="Galeri ${i + 1}" src="${esc(driveThumb(g.id, 300))}" width="240" height="150"><input class="input" aria-label="Label foto ${i + 1}" placeholder="Label foto" data-gal-l="${i}" value="${esc(g.label || '')}"><button class="x" type="button" data-rmgal="${i}" aria-label="Hapus">${icon('x')}</button></div>`).join(''); $('#addgal').disabled = F.galeri.length >= 5; }
     gambarGaleri();
     $('#addgal').addEventListener('click', () => $('#galinput').click());
     on(el, 'input', '[data-gal-l]', (e, t) => { F.galeri[+t.dataset.galL].label = t.value; });
@@ -241,10 +241,10 @@ async function admTestimoni(c) {
   const tes = Array.isArray(rawTes) ? rawTes : [];
   el.innerHTML = `<div class="page-h"><div><div class="eyebrow">Moderasi Ulasan</div><h1 class="h-lg" style="margin-top:4px">Moderasi Testimoni &amp; Ulasan Pembeli</h1><p>Tinjau testimoni dari pembeli terverifikasi sebelum dipublikasikan ke halaman etalase publik.</p></div></div>
     <div class="stats c3">
-      <div class="card stat" style="border-left:3px solid var(--warn)"><div class="lbl-mono">Menunggu Moderasi</div><div class="sv">${tes.filter((t) => t.status === 'Menunggu').length}<small>ulasan</small></div></div>
-      <div class="card stat" style="border-left:3px solid var(--ok)"><div class="lbl-mono">Disetujui &amp; Tampil</div><div class="sv">${tes.filter((t) => t.status === 'Disetujui').length}<small>publik</small></div></div>
-      <div class="card stat" style="border-left:3px solid var(--line-2)"><div class="lbl-mono">Ditolak / Disembunyikan</div><div class="sv">${tes.filter((t) => t.status === 'Ditolak' || t.status === 'Disembunyikan').length}<small>arsip</small></div></div></div>
-    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:16px"><div id="tabs"></div><div class="ig" style="flex:1;min-width:220px;max-width:340px;margin-left:auto">${icon('search')}<input class="input" id="q" placeholder="Cari pembeli / aplikasi..." value="${esc(AdmT.q)}"></div></div>
+      <div class="card stat" ><div class="lbl-mono">Menunggu Moderasi</div><div class="sv">${tes.filter((t) => t.status === 'Menunggu').length}<small>ulasan</small></div></div>
+      <div class="card stat" ><div class="lbl-mono">Disetujui &amp; Tampil</div><div class="sv">${tes.filter((t) => t.status === 'Disetujui').length}<small>publik</small></div></div>
+      <div class="card stat" ><div class="lbl-mono">Ditolak / Disembunyikan</div><div class="sv">${tes.filter((t) => t.status === 'Ditolak' || t.status === 'Disembunyikan').length}<small>arsip</small></div></div></div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:16px"><div id="tabs"></div><div class="ig" style="flex:1;min-width:220px;max-width:340px;margin-left:auto">${icon('search')}<input class="input" id="q" aria-label="Cari testimoni" placeholder="Cari pembeli / aplikasi..." value="${esc(AdmT.q)}"></div></div>
     <div id="list"></div>`;
   function daftar() {
     const q = AdmT.q.trim().toLowerCase();
@@ -255,7 +255,7 @@ async function admTestimoni(c) {
       ? `<button class="btn btn-success btn-sm" data-aksi="setujui" data-id="${esc(t.id)}">${icon('check')} Setujui &amp; Publikasikan</button><button class="btn btn-danger-o btn-sm" data-aksi="tolak" data-id="${esc(t.id)}">${icon('x')} Tolak / Sembunyikan</button>`
       : t.status === 'Disetujui' ? `<button class="btn btn-secondary btn-sm" data-aksi="sembunyikan" data-id="${esc(t.id)}">${icon('eye-off')} Sembunyikan</button>`
         : `<button class="btn btn-secondary btn-sm" data-aksi="setujui" data-id="${esc(t.id)}">${icon('check')} Publikasikan Kembali</button>`;
-    return `<div class="card mod-card ${t.status === 'Disetujui' ? 'done' : t.status !== 'Menunggu' ? 'arsip' : ''}"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><div style="display:flex;gap:12px"><span class="avatar" style="width:40px;height:40px">${t.foto ? `<img alt="" src="${esc(driveThumb(t.foto, 100))}">` : esc(inisial(t.nama))}</span><div><b>${esc(t.nama)}</b>${t.peran ? `<div class="hint">${esc(t.peran)}</div>` : ''}<div class="hint mono">${esc(t.kode)} • ${esc(t.email_pembeli)}</div></div></div><span class="muted t-sm">${esc(relatif(t.tanggal))}</span></div>
+    return `<div class="card mod-card ${t.status === 'Disetujui' ? 'done' : t.status !== 'Menunggu' ? 'arsip' : ''}"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><div style="display:flex;gap:12px"><span class="avatar" style="width:40px;height:40px">${t.foto ? `<img alt="" src="${esc(driveThumb(t.foto, 100))}" width="40" height="40">` : esc(inisial(t.nama))}</span><div><b>${esc(t.nama)}</b>${t.peran ? `<div class="hint">${esc(t.peran)}</div>` : ''}<div class="hint mono">${esc(t.kode)} • ${esc(t.email_pembeli)}</div></div></div><span class="muted t-sm">${esc(relatif(t.tanggal))}</span></div>
       <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:12px"><span class="tag">${icon('package')} ${esc(t.aplikasi)}</span>${bintang(t.rating, 16)}</div>
       <p class="quote">“${esc(t.isi)}”</p>
       <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div style="display:flex;gap:8px">${aksi}</div>${t.email_pembeli ? `<a class="btn btn-ghost btn-sm" href="mailto:${esc(t.email_pembeli)}">${icon('mail')} Hubungi Pembeli</a>` : ''}</div></div>`;
@@ -412,7 +412,7 @@ async function admPengaturan(c) {
         </div>
         <div style="display:flex;align-items:center;gap:8px">
           <label class="switch" title="${k.aktif ? 'Nonaktifkan' : 'Aktifkan'}">
-            <input type="checkbox" data-tgl-kupon="${i}" ${k.aktif ? 'checked' : ''}>
+            <input type="checkbox" aria-label="Status kupon ${esc(k.kode)}" data-tgl-kupon="${i}" ${k.aktif ? 'checked' : ''}>
           </label>
           <button class="btn btn-secondary btn-sm" type="button" data-edit-kupon="${i}">${icon('pencil')} Edit</button>
           <button class="btn btn-ghost btn-sm btn-icon" type="button" data-rm-kupon="${i}" aria-label="Hapus">${icon('trash')}</button>
@@ -426,35 +426,35 @@ async function admPengaturan(c) {
     const res = await modal(`
       <h3>${isEdit ? 'Edit Kupon Promo' : 'Tambah Kupon Promo Baru'}</h3>
       <div class="field" style="margin-top:12px">
-        <label>Kode Kupon <span class="req">*</span></label>
+        <label for="m_kode">Kode Kupon <span class="req">*</span></label>
         <input class="input mono" id="m_kode" maxlength="25" placeholder="Contoh: DISKON10" style="text-transform:uppercase" value="${esc(init.kode)}">
         <div class="hint">Huruf kapital &amp; angka tanpa spasi (misal: LAUNCHING, DISKON20).</div>
       </div>
       <div class="row c2">
         <div class="field">
-          <label>Tipe Diskon</label>
+          <label for="m_tipe">Tipe Diskon</label>
           <select class="select" id="m_tipe">
             <option value="persen" ${init.tipe === 'persen' ? 'selected' : ''}>Persentase (%)</option>
             <option value="nominal" ${init.tipe === 'nominal' ? 'selected' : ''}>Nominal Tetap (Rp)</option>
           </select>
         </div>
         <div class="field">
-          <label>Besar Diskon <span class="req">*</span></label>
+          <label for="m_nilai">Besar Diskon <span class="req">*</span></label>
           <input class="input mono" id="m_nilai" type="number" min="1" placeholder="Misal: 10 atau 25000" value="${init.nilai || ''}">
         </div>
       </div>
       <div class="row c2">
         <div class="field">
-          <label>Minimal Belanja <span class="opt">(0 jika tanpa minimum)</span></label>
+          <label for="m_min">Minimal Belanja <span class="opt">(0 jika tanpa minimum)</span></label>
           <input class="input mono" id="m_min" type="number" min="0" placeholder="0" value="${init.min || 0}">
         </div>
         <div class="field" id="m_maks_field">
-          <label>Maksimal Potongan <span class="opt">(opsional untuk %)</span></label>
+          <label for="m_maks">Maksimal Potongan <span class="opt">(opsional untuk %)</span></label>
           <input class="input mono" id="m_maks" type="number" min="0" placeholder="0" value="${init.maks || 0}">
         </div>
       </div>
       <div class="field">
-        <label>Keterangan / Catatan Singkat <span class="opt">(opsional)</span></label>
+        <label for="m_ket">Keterangan / Catatan Singkat <span class="opt">(opsional)</span></label>
         <input class="input" id="m_ket" maxlength="150" placeholder="Contoh: Promo khusus peluncuran produk" value="${esc(init.ket || '')}">
       </div>
       <label class="check" style="margin:12px 0 16px">
@@ -515,7 +515,7 @@ async function admPengaturan(c) {
     return `<div class="card card-p"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><p class="muted t-sm" style="margin:0">Susun pertanyaan yang tampil di halaman Bantuan publik.</p><button class="btn btn-secondary btn-sm" id="addfaq">${icon('plus')} Tambah FAQ</button></div><div id="faqwrap"></div></div>`;
   }
   function gambarFaq() {
-    $('#faqwrap').innerHTML = faq.length ? faq.map((f, i) => `<div class="faq-edit"><div style="display:flex;gap:8px;align-items:flex-start"><span class="lbl-mono" style="padding-top:10px">${icon('grip')}</span><div style="flex:1;display:grid;gap:8px"><input class="input" placeholder="Kategori" maxlength="80" data-faq-k="${i}" value="${esc(f.kategori)}"><input class="input" placeholder="Pertanyaan" maxlength="300" data-faq-q="${i}" value="${esc(f.pertanyaan)}"><textarea class="textarea" rows="2" placeholder="Jawaban" maxlength="3000" data-faq-a="${i}">${esc(f.jawaban)}</textarea></div><button class="btn btn-ghost btn-sm btn-icon" data-rmfaq="${i}">${icon('trash')}</button></div></div>`).join('') : `<div class="empty" style="padding:24px">Belum ada FAQ.</div>`;
+    $('#faqwrap').innerHTML = faq.length ? faq.map((f, i) => `<div class="faq-edit"><div style="display:flex;gap:8px;align-items:flex-start"><span class="lbl-mono" style="padding-top:10px">${icon('grip')}</span><div style="flex:1;display:grid;gap:8px"><input class="input" aria-label="Kategori FAQ ${i + 1}" placeholder="Kategori" maxlength="80" data-faq-k="${i}" value="${esc(f.kategori)}"><input class="input" aria-label="Pertanyaan FAQ ${i + 1}" placeholder="Pertanyaan" maxlength="300" data-faq-q="${i}" value="${esc(f.pertanyaan)}"><textarea class="textarea" rows="2" aria-label="Jawaban FAQ ${i + 1}" placeholder="Jawaban" maxlength="3000" data-faq-a="${i}">${esc(f.jawaban)}</textarea></div><button class="btn btn-ghost btn-sm btn-icon" type="button" aria-label="Hapus FAQ ${i + 1}" data-rmfaq="${i}">${icon('trash')}</button></div></div>`).join('') : `<div class="empty" style="padding:24px">Belum ada FAQ.</div>`;
   }
   function panelEmail() {
     return `<div class="row row-email"><div class="card card-p">
@@ -687,7 +687,7 @@ async function admPengaturan(c) {
     }
   }
   async function gantiSandiModal() {
-    const v = await modal(`<h3>Ubah Kata Sandi Admin</h3><div class="field"><label>Kata Sandi Lama</label><input class="input" type="password" id="m_lama"></div><div class="field"><label>Kata Sandi Baru <span class="hint">(minimal 8 karakter)</span></label><input class="input" type="password" id="m_baru"></div><div class="act"><button class="btn btn-secondary" data-m="no">Batal</button><button class="btn btn-primary" data-m="ok">Simpan</button></div>`, { ambil: (m) => { const l = $('#m_lama', m).value, b = $('#m_baru', m).value; if (!l || b.length < 8) { toast('Isi kata sandi lama dan baru (minimal 8 karakter).', 'warn'); return false; } return { l, b }; } });
+    const v = await modal(`<h3>Ubah Kata Sandi Admin</h3><div class="field"><label for="m_lama">Kata Sandi Lama</label><input class="input" type="password" id="m_lama"></div><div class="field"><label for="m_baru">Kata Sandi Baru <span class="hint">(minimal 8 karakter)</span></label><input class="input" type="password" id="m_baru"></div><div class="act"><button class="btn btn-secondary" data-m="no">Batal</button><button class="btn btn-primary" data-m="ok">Simpan</button></div>`, { ambil: (m) => { const l = $('#m_lama', m).value, b = $('#m_baru', m).value; if (!l || b.length < 8) { toast('Isi kata sandi lama dan baru (minimal 8 karakter).', 'warn'); return false; } return { l, b }; } });
     if (!v) return;
     try { await ambil('adminChangePassword', { lama: v.l, baru: v.b }); toast('Kata sandi berhasil diubah.', 'ok'); } catch (e) { toast(e.message, 'err'); }
   }

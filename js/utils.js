@@ -1,8 +1,8 @@
 /* ============================================================
-   utils.js — ikon, format, keamanan (escape), toast, modal, berkas
+   utils.js - ikon, format, keamanan (escape), toast, modal, berkas
    ============================================================ */
 
-// ---------- Ikon (gaya Lucide, 24x24) ----------
+// ---------- Ikon fungsional (24x24) ----------
 const ICON_PATHS = {
   search: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
   check: '<path d="M20 6 9 17l-5-5"/>',
@@ -96,11 +96,17 @@ function ambilDaftarKupon(sumber) {
   }
 }
 
-// ---------- DOM & string ----------
+// ---------- DOM & string (termasuk sanitasi em-dash sesuai R-02) ----------
 const $ = (s, el) => (el || document).querySelector(s);
 const $$ = (s, el) => Array.from((el || document).querySelectorAll(s));
 function esc(s) {
-  return String(s === undefined || s === null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  return String(s === undefined || s === null ? '' : s)
+    .replace(/\u2014/g, '-')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 function debounce(fn, ms) { let t; return function () { const a = arguments, c = this; clearTimeout(t); t = setTimeout(() => fn.apply(c, a), ms || 250); }; }
 function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
@@ -150,18 +156,24 @@ function linkWA(nomor, teks) {
   return 'https://wa.me/' + n + (teks ? '?text=' + encodeURIComponent(teks) : '');
 }
 
-// ---------- Video & gambar Drive ----------
+// ---------- Video & gambar ----------
 function ytId(url) {
   const s = String(url || '');
   const m = /(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/))([\w-]{6,})/.exec(s);
   return m ? m[1] : '';
 }
-function driveThumb(id, w) { return id ? 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(id) + '&sz=w' + (w || 800) : ''; }
+function driveThumb(id, w) {
+  if (!id) return '';
+  const s = String(id).trim();
+  if (/^(https?:\/\/|data:|blob:|assets\/)/i.test(s)) return s;
+  return 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(s) + '&sz=w' + (w || 800);
+}
 function urlAman(u) { return /^https?:\/\//i.test(String(u || '')) ? u : ''; }
 
 // ---------- Markdown ringan (aman: di-escape dulu) ----------
 function mdInline(t) {
-  return t
+  return String(t || '')
+    .replace(/\u2014/g, '-')
     .replace(/`([^`]+)`/g, '<code>$1</code>')
     .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
     .replace(/(^|[^*])\*([^*\s][^*]*)\*/g, '$1<em>$2</em>')
@@ -220,9 +232,9 @@ function bukaLightbox(url, judul) {
   if (!url) return;
   const bd = document.createElement('div');
   bd.className = 'lightbox-bd';
-  bd.innerHTML = `<div class="lightbox-box">
-    <button class="lightbox-close" type="button" aria-label="Tutup">${icon('x')}</button>
-    <img class="lightbox-img" src="${esc(url)}" alt="${esc(judul || 'Tangkapan Layar')}">
+  bd.innerHTML = `<div class="lightbox-box" role="dialog" aria-modal="true" aria-label="${esc(judul || 'Tangkapan Layar')}">
+    <button class="lightbox-close" type="button" aria-label="Tutup pratinjau">${icon('x')}</button>
+    <img class="lightbox-img" width="1200" height="675" src="${esc(url)}" alt="${esc(judul || 'Tangkapan Layar')}">
     ${judul ? `<div class="lightbox-cap">${icon('image')} ${esc(judul)}</div>` : ''}
   </div>`;
   const tutup = () => { bd.remove(); document.removeEventListener('keydown', esc_); };
@@ -232,6 +244,8 @@ function bukaLightbox(url, judul) {
     if (e.target === bd || e.target.closest('.lightbox-close')) tutup();
   });
   document.body.appendChild(bd);
+  const closeBtn = bd.querySelector('.lightbox-close');
+  if (closeBtn) closeBtn.focus();
 }
 async function salin(teks, pesan) {
   try { await navigator.clipboard.writeText(teks); }
@@ -253,7 +267,6 @@ function muatGambar(src) {
   return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error('Berkas bukan gambar yang valid.')); i.src = src; });
 }
 function gantiEkstensi(nama, ext) { return String(nama || 'berkas').replace(/\.[^.]+$/, '') + '.' + ext; }
-// Kompres gambar di browser supaya unggahan ringan.
 async function siapkanGambar(file, opsi) {
   opsi = opsi || {};
   const maxSisi = opsi.maxSisi || 1600, kualitas = opsi.kualitas || 0.82;
@@ -309,25 +322,36 @@ function bintang(n, ukuran) {
   for (let i = 1; i <= 5; i++) s += '<span class="' + (i <= Math.round(n) ? '' : 'off') + '">' + icon('star') + '</span>';
   return s + '</span>';
 }
-function hashAngka(s) { let h = 0; String(s || '').split('').forEach((c) => { h = (h * 31 + c.charCodeAt(0)) >>> 0; }); return h; }
-// Pratinjau aplikasi: gambar thumbnail bila ada, kalau tidak: jendela aplikasi ilustratif
+
+// Pratinjau aplikasi: gambar asli bila ada, atau placeholder jujur [PRATINJAU BELUM TERSEDIA] sesuai R-23 & R-38
+function placeholderPratinjau(app) {
+  const kat = esc((app && app.kategori) || 'Aplikasi Web');
+  const ver = app && app.versi ? ' · v' + esc(app.versi) : '';
+  const nama = esc((app && app.nama) || 'Aplikasi Web');
+  return '<div class="pv-placeholder">' +
+    '<span class="pv-ph-tag mono">[PRATINJAU BELUM TERSEDIA]</span>' +
+    '<strong class="pv-ph-title">' + nama + '</strong>' +
+    '<span class="pv-ph-meta mono">' + kat + ver + '</span>' +
+  '</div>';
+}
 function pratinjau(app, opsi) {
   opsi = opsi || {};
-  const url = opsi.thumb !== undefined ? opsi.thumb : app.thumb;
-  const h = hashAngka(app.id || app.nama);
+  const rawUrl = opsi.thumb !== undefined ? opsi.thumb : (app && (app.thumb || app.thumbnail_url));
+  const w = opsi.lebar || (opsi.besar ? 1100 : 640);
+  const h = Math.round(w * 9 / 16);
+  const phHtml = placeholderPratinjau(app);
   let inner;
-  if (url) inner = '<img class="shot" loading="lazy" alt="Tampilan ' + esc(app.nama) + '" src="' + esc(driveThumb(url, opsi.lebar || 640)) + '" onerror="this.replaceWith(Object.assign(document.createElement(\'div\'),{className:\'scr\',innerHTML:\'<div class=ln></div><div class=ln></div>\'}))">';
-  else {
-    let baris = '';
-    const n = opsi.besar ? 7 : 4;
-    for (let i = 0; i < n; i++) baris += '<div class="ln ' + (['a', '', 'b', ''][(h + i) % 4]) + '" style="width:' + (55 + ((h >> i) % 40)) + '%"></div>';
-    inner = '<div class="scr">' + baris + '</div>';
+  if (rawUrl) {
+    const loadAttr = opsi.prioritas ? 'fetchpriority="high"' : 'loading="lazy"';
+    inner = '<img class="shot" ' + loadAttr + ' width="' + w + '" height="' + h + '" alt="Tampilan ' + esc(app.nama) + '" src="' + esc(driveThumb(rawUrl, w)) + '" data-ph-nama="' + esc(app.nama) + '" data-ph-kat="' + esc(app.kategori || 'Aplikasi Web') + '" data-ph-ver="' + esc(app.versi || '') + '" onerror="const d=document.createElement(\'div\');d.className=\'pv-placeholder\';d.innerHTML=\'<span class=&quot;pv-ph-tag mono&quot;>[PRATINJAU BELUM TERSEDIA]</span><strong class=&quot;pv-ph-title&quot;>\'+this.dataset.phNama+\'</strong><span class=&quot;pv-ph-meta mono&quot;>\'+this.dataset.phKat+(this.dataset.phVer?\' · v\'+this.dataset.phVer:\'\')+\'</span>\';this.replaceWith(d);">';
+  } else {
+    inner = phHtml;
   }
   return '<div class="pv ' + (opsi.besar ? 'big' : '') + '">' + inner + '</div>';
 }
 function inputWaktuSekarang() { return new Date().toISOString(); }
 
-// ---------- Top Loading Bar (Indikator Transisi Navigasi Cepat) ----------
+// ---------- Top Loading Bar ----------
 const TopBar = {
   el: null,
   timer: null,

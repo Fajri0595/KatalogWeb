@@ -1,5 +1,5 @@
 /* ============================================================
-   api.js — Layanan Komunikasi Data Terintegrasi (Supabase & Vercel API)
+   api.js - Layanan Komunikasi Data Terintegrasi (Supabase & Vercel API)
    ============================================================ */
 
 class ApiError extends Error {

@@ -1,5 +1,5 @@
 /* ============================================================
-   charts.js — grafik SVG profesional & ringan tanpa pustaka
+   charts.js - grafik SVG ringan tanpa pustaka eksternal
    ============================================================ */
 function labelKunci(k, mode) {
   if (mode === 'bulan') { const p = String(k).split('-'); return BLN[+p[1] - 1] + ' ' + String(p[0]).slice(2); }
@@ -43,7 +43,7 @@ function grafikTren(deret, mode) {
   const yP = (v) => pt + (H - pt - pb) * (1 - v / maxP);
   const yK = (v) => pt + (H - pt - pb) * (1 - v / maxK * 0.85);
 
-  // Sumbu Y & Garis Grid Horizontal
+  // Sumbu Y & Garis Grid Horizontal (rasio kontras #475569 di atas #FFFFFF = 7.58:1 sesuai R-25)
   let grid = '';
   let yAxisLabels = '';
   const ySteps = 3;
@@ -51,8 +51,8 @@ function grafikTren(deret, mode) {
     const yVal = pt + (H - pt - pb) * i / ySteps;
     const nominal = maxP * (1 - i / ySteps);
     const teksNominal = i === ySteps ? '0' : singkatRp(nominal);
-    grid += '<line x1="' + pl + '" x2="' + (W - pr) + '" y1="' + yVal.toFixed(1) + '" y2="' + yVal.toFixed(1) + '" stroke="' + (i === ySteps ? '#CBD5E1' : 'rgba(226, 232, 240, 0.85)') + '" stroke-width="1"' + (i === ySteps ? '' : ' stroke-dasharray="3 3"') + '/>';
-    yAxisLabels += '<text x="' + (pl - 10) + '" y="' + (yVal + 3.5).toFixed(1) + '" text-anchor="end" font-size="10.5" fill="#94A3B8" font-family="JetBrains Mono, monospace">' + esc(teksNominal) + '</text>';
+    grid += '<line x1="' + pl + '" x2="' + (W - pr) + '" y1="' + yVal.toFixed(1) + '" y2="' + yVal.toFixed(1) + '" stroke="' + (i === ySteps ? '#CBD5E1' : '#E2E8F0') + '" stroke-width="1"' + (i === ySteps ? '' : ' stroke-dasharray="3 3"') + '/>';
+    yAxisLabels += '<text x="' + (pl - 10) + '" y="' + (yVal + 3.5).toFixed(1) + '" text-anchor="end" font-size="11" fill="#475569" font-family="JetBrains Mono, monospace">' + esc(teksNominal) + '</text>';
   }
 
   // Kurva data
@@ -62,9 +62,9 @@ function grafikTren(deret, mode) {
   const kurvaK = jalurKurva(ptsK);
   const areaP = kurvaP + ' L ' + x(n - 1).toFixed(1) + ' ' + (H - pb) + ' L ' + x(0).toFixed(1) + ' ' + (H - pb) + ' Z';
 
-  // Label Sumbu X dengan pencegahan tabrakan pintar
+  // Label Sumbu X dengan pencegahan tabrakan
   const labelIndices = [];
-  const minGap = 68; // Jarak pixel minimal antar label tanggal
+  const minGap = 68;
   let lastX = -999;
   for (let i = 0; i < n; i++) {
     const curX = x(i);
@@ -76,7 +76,7 @@ function grafikTren(deret, mode) {
       if (curX - lastX >= minGap * 0.72) {
         labelIndices.push(i);
       } else if (labelIndices.length > 1) {
-        labelIndices[labelIndices.length - 1] = i; // Gantikan label sebelum terakhir jika terlalu mepet
+        labelIndices[labelIndices.length - 1] = i;
       }
     } else if (curX - lastX >= minGap && distFromEnd >= minGap) {
       labelIndices.push(i);
@@ -87,10 +87,10 @@ function grafikTren(deret, mode) {
   let lab = '';
   labelIndices.forEach((i) => {
     const anchor = i === 0 ? 'start' : i === n - 1 ? 'end' : 'middle';
-    lab += '<text x="' + x(i).toFixed(1) + '" y="' + (H - 10) + '" text-anchor="' + anchor + '" font-size="11" font-weight="500" fill="#64748B" font-family="JetBrains Mono, monospace">' + esc(labelKunci(deret[i].kunci, mode)) + '</text>';
+    lab += '<text x="' + x(i).toFixed(1) + '" y="' + (H - 10) + '" text-anchor="' + anchor + '" font-size="11" font-weight="500" fill="#475569" font-family="JetBrains Mono, monospace">' + esc(labelKunci(deret[i].kunci, mode)) + '</text>';
   });
 
-  // Titik data (data dots) dengan tooltip informatif
+  // Titik data dengan tooltip informatif
   let titik = '';
   deret.forEach((d, i) => {
     const akhir = i === n - 1;
@@ -111,15 +111,14 @@ function grafikTren(deret, mode) {
   return '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Grafik tren penjualan dan kunjungan" style="width:100%;height:auto;overflow:visible">' +
     '<defs>' +
       '<linearGradient id="' + id + '" x1="0" x2="0" y1="0" y2="1">' +
-        '<stop offset="0%" stop-color="#4F46E5" stop-opacity="0.22"/>' +
-        '<stop offset="85%" stop-color="#4F46E5" stop-opacity="0.02"/>' +
+        '<stop offset="0%" stop-color="#4F46E5" stop-opacity="0.18"/>' +
         '<stop offset="100%" stop-color="#4F46E5" stop-opacity="0"/>' +
       '</linearGradient>' +
     '</defs>' +
     grid + yAxisLabels +
-    '<path d="' + kurvaK + '" fill="none" stroke="#94A3B8" stroke-width="2" stroke-dasharray="4 4" stroke-linejoin="round" opacity="0.85"/>' +
+    '<path d="' + kurvaK + '" fill="none" stroke="#64748B" stroke-width="2" stroke-dasharray="4 4" stroke-linejoin="round" opacity="0.85"/>' +
     '<path d="' + areaP + '" fill="url(#' + id + ')"/>' +
-    '<path d="' + kurvaP + '" fill="none" stroke="#4F46E5" stroke-width="2.75" stroke-linejoin="round" stroke-linecap="round"/>' +
+    '<path d="' + kurvaP + '" fill="none" stroke="#4F46E5" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>' +
     titik + lab + '</svg>';
 }
 function barStatus(st) {
